@@ -601,7 +601,11 @@ export function PlayView({
                   className="flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-slate-900 bg-white shadow-[0_3px_0_0_#0F172A]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <AvatarBadge avatarId={player.avatarId} name={player.displayName} />
+                    <AvatarBadge
+                      avatarId={player.avatarId}
+                      name={player.displayName}
+                      emblemIcon={player.emblemIcon}
+                    />
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 truncate">
                         {player.displayName}

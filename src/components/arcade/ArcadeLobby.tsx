@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, LayoutGrid, Plus, Users } from 'lucide-react';
+import { ArrowRight, Bot, LayoutGrid, Plus, Users } from 'lucide-react';
 import { getCatalogEntry } from '../../data/arcadeCatalog';
+import type { BotDifficulty } from '../../lib/botAi';
 import { formatRelativeTime, normalizeInviteCode } from '../../lib/gameLogic';
 import {
   createArcadeRoom,
@@ -19,6 +20,7 @@ interface ArcadeLobbyProps {
   myActiveRooms: ArcadeRoom[];
   onOpenRoom: (roomId: string) => void;
   onStartLocal: (p1Name: string, p2Name: string) => void;
+  onStartBot: (difficulty: BotDifficulty) => void;
   onOpenSwitcher: () => void;
 }
 
@@ -29,6 +31,7 @@ export function ArcadeLobby({
   myActiveRooms,
   onOpenRoom,
   onStartLocal,
+  onStartBot,
   onOpenSwitcher,
 }: ArcadeLobbyProps) {
   const catalog = getCatalogEntry(gameType);
@@ -40,6 +43,7 @@ export function ArcadeLobby({
   const [errorMsg, setErrorMsg] = useState('');
   const [localP1, setLocalP1] = useState(currentUser.displayName || 'Player 1');
   const [localP2, setLocalP2] = useState('Player 2');
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('tactical');
 
   const gameOpenRooms = openRooms.filter(
     (r) => r.gameType === gameType && r.player1Uid !== currentUser.uid,
@@ -320,52 +324,96 @@ export function ArcadeLobby({
         </div>
       </div>
 
-      {/* In-Person Pass & Play Card */}
-      <section className="bg-rose-50 border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A]">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      {/* Offline Modes: Pass & Play + Solo Practice vs Bot */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <section className="lg:col-span-6 bg-rose-50 border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between gap-5">
           <div>
             <div className="flex items-center gap-2.5">
               <Users className="w-5 h-5 text-rose-600" />
               <h2 className="font-display text-lg font-bold text-slate-900">
-                Play {catalog.name} Together in Person (Pass & Play)
+                Play Together in Person
               </h2>
             </div>
             <p className="mt-1 text-sm text-slate-700">
-              Share one device with a friend right next to you — includes privacy shields for hidden-card and secret-word games.
+              Hand the device back and forth with a friend right next to you — includes privacy shields for hidden-info games.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <input
-              type="text"
-              maxLength={24}
-              value={localP1}
-              onChange={(e) => setLocalP1(e.target.value)}
-              placeholder="Player 1"
-              aria-label="Player 1 name"
-              className="w-36 px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900"
-            />
-            <span className="text-xs font-bold text-slate-500">vs</span>
-            <input
-              type="text"
-              maxLength={24}
-              value={localP2}
-              onChange={(e) => setLocalP2(e.target.value)}
-              placeholder="Player 2"
-              aria-label="Player 2 name"
-              className="w-36 px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900"
-            />
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                maxLength={24}
+                value={localP1}
+                onChange={(e) => setLocalP1(e.target.value)}
+                placeholder="Player 1"
+                aria-label="Player 1 name"
+                className="flex-1 min-w-[110px] px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900"
+              />
+              <span className="text-xs font-bold text-slate-500">vs</span>
+              <input
+                type="text"
+                maxLength={24}
+                value={localP2}
+                onChange={(e) => setLocalP2(e.target.value)}
+                placeholder="Player 2"
+                aria-label="Player 2 name"
+                className="flex-1 min-w-[110px] px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900"
+              />
+            </div>
             <button
               type="button"
               onClick={() => onStartLocal(localP1.trim() || 'Player 1', localP2.trim() || 'Player 2')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-900 bg-rose-500 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-rose-600 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap"
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-900 bg-rose-500 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-rose-600 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap"
             >
               <Users className="w-4 h-4" />
-              Start Pass & Play
+              Start Pass &amp; Play
             </button>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="lg:col-span-6 bg-sky-50 border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between gap-5">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Bot className="w-5 h-5 text-blue-600" />
+              <h2 className="font-display text-lg font-bold text-slate-900">
+                Practice Alone vs Bot
+              </h2>
+            </div>
+            <p className="mt-1 text-sm text-slate-700">
+              Challenge the {catalog.name} AI solo — pick a difficulty level and jump right in.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-white border-2 border-slate-900 rounded-xl">
+              {(['casual', 'tactical', 'unbeatable'] as const).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setBotDifficulty(level)}
+                  className={`py-1.5 text-xs font-bold rounded-lg capitalize cursor-pointer transition-colors whitespace-nowrap ${
+                    botDifficulty === level
+                      ? 'bg-amber-300 text-slate-900'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onStartBot(botDifficulty)}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-900 bg-white text-slate-900 text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-amber-100 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap"
+            >
+              <Bot className="w-4 h-4" />
+              Play {catalog.name} vs Bot
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

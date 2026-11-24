@@ -40,6 +40,16 @@ service cloud.firestore {
         && avatar in ['coral', 'cobalt', 'emerald', 'amber', 'slate', 'plum'];
     }
 
+    function isValidEmblemIcon(icon) {
+      return icon is string
+        && icon in ['letter', 'crown', 'flame', 'star', 'zap', 'shield', 'sparkles', 'ghost'];
+    }
+
+    function isValidBannerTheme(theme) {
+      return theme is string
+        && theme in ['classic', 'amber', 'sky', 'rose', 'emerald', 'slate'];
+    }
+
     function isValidCell(cell) {
       return cell is string && (cell == '' || cell == 'X' || cell == 'O');
     }
@@ -56,6 +66,7 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'uid', 'username', 'displayName', 'avatarId', 'bio', 'visibility',
+          'emblemIcon', 'bannerTheme', 'playerTitle',
           'wins', 'losses', 'draws', 'gamesPlayed', 'points',
           'winStreak', 'bestStreak', 'lastMatchId', 'isOnline',
           'lastActiveAt', 'createdAt', 'updatedAt'
@@ -71,6 +82,9 @@ service cloud.firestore {
         && isValidAvatar(data.avatarId)
         && data.bio is string
         && data.bio.size() <= 160
+        && (!('emblemIcon' in data) || isValidEmblemIcon(data.emblemIcon))
+        && (!('bannerTheme' in data) || isValidBannerTheme(data.bannerTheme))
+        && (!('playerTitle' in data) || (data.playerTitle is string && data.playerTitle.size() <= 24))
         && data.visibility == 'public'
         && data.wins is int && data.wins >= 0
         && data.losses is int && data.losses >= 0
@@ -240,6 +254,38 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidLoungeMessage(data) {
+      return data.keys().hasAll([
+          'channel', 'senderUid', 'senderName', 'senderAvatar', 'senderEmblem', 'senderTitle', 'text', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'channel', 'senderUid', 'senderName', 'senderAvatar', 'senderEmblem', 'senderTitle', 'text', 'createdAt'
+        ])
+        && data.channel == 'chill'
+        && isValidId(data.senderUid)
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 40
+        && isValidAvatar(data.senderAvatar)
+        && isValidEmblemIcon(data.senderEmblem)
+        && data.senderTitle is string && data.senderTitle.size() <= 24
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 280
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMatchMessage(data) {
+      return data.keys().hasAll([
+          'senderUid', 'senderName', 'senderAvatar', 'senderEmblem', 'text', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'senderUid', 'senderName', 'senderAvatar', 'senderEmblem', 'text', 'createdAt'
+        ])
+        && isValidId(data.senderUid)
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 40
+        && isValidAvatar(data.senderAvatar)
+        && isValidEmblemIcon(data.senderEmblem)
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 280
+        && data.createdAt is timestamp;
+    }
+
     function isGameTransitionValidForPlayerStat(uid, gameId, inc, ext) {
       let preGame = get(/databases/$(database)/documents/games/$(gameId)).data;
       let postGame = getAfter(/databases/$(database)/documents/games/$(gameId)).data;
@@ -298,10 +344,12 @@ service cloud.firestore {
         && incoming().visibility == existing().visibility
         && incoming().updatedAt == request.time
         && (
-          // Action 1: Owner updates profile or presence
+          // Action 1: Owner updates profile, customization, or presence
           (request.auth.uid == uid
             && incoming().diff(existing()).affectedKeys().hasOnly([
-              'username', 'displayName', 'avatarId', 'bio', 'isOnline', 'lastActiveAt', 'updatedAt'
+              'username', 'displayName', 'avatarId', 'bio',
+              'emblemIcon', 'bannerTheme', 'playerTitle',
+              'isOnline', 'lastActiveAt', 'updatedAt'
             ]))
           ||
           // Action 2: Atomic match completion stat update linked to games/{lastMatchId}
@@ -473,6 +521,27 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn()
+          && isValidId(gameId)
+          && isValidId(messageId)
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+
+        allow list: if isSignedIn()
+          && isValidId(gameId)
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+
+        allow create: if isSignedIn()
+          && isValidId(gameId)
+          && isValidId(messageId)
+          && isValidMatchMessage(incoming())
+          && incoming().senderUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+
+        allow update, delete: if false;
+      }
     }
 
     match /roomCodes/{inviteCode} {
@@ -634,6 +703,27 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn()
+          && isValidId(roomId)
+          && isValidId(messageId)
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+
+        allow list: if isSignedIn()
+          && isValidId(roomId)
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+
+        allow create: if isSignedIn()
+          && isValidId(roomId)
+          && isValidId(messageId)
+          && isValidMatchMessage(incoming())
+          && incoming().senderUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+
+        allow update, delete: if false;
+      }
     }
 
     match /arcadeCodes/{inviteCode} {
@@ -646,6 +736,20 @@ service cloud.firestore {
         && incoming().hostUid == request.auth.uid
         && incoming().createdAt == request.time
         && existsAfter(/databases/$(database)/documents/arcadeRooms/$(incoming().roomId));
+
+      allow update, delete: if false;
+    }
+
+    match /loungeMessages/{messageId} {
+      allow get: if isSignedIn() && isValidId(messageId);
+      allow list: if isSignedIn() && resource.data.channel == 'chill';
+
+      allow create: if isSignedIn()
+        && isValidId(messageId)
+        && isValidLoungeMessage(incoming())
+        && incoming().channel == 'chill'
+        && incoming().senderUid == request.auth.uid
+        && incoming().createdAt == request.time;
 
       allow update, delete: if false;
     }

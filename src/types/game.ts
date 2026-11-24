@@ -4,12 +4,46 @@ export type AvatarId = 'coral' | 'cobalt' | 'emerald' | 'amber' | 'slate' | 'plu
 
 export const AVATAR_IDS: AvatarId[] = ['coral', 'cobalt', 'emerald', 'amber', 'slate', 'plum'];
 
+export type EmblemIconId =
+  | 'letter'
+  | 'crown'
+  | 'flame'
+  | 'star'
+  | 'zap'
+  | 'shield'
+  | 'sparkles'
+  | 'ghost';
+
+export const EMBLEM_ICON_IDS: EmblemIconId[] = [
+  'letter',
+  'crown',
+  'flame',
+  'star',
+  'zap',
+  'shield',
+  'sparkles',
+  'ghost',
+];
+
+export type BannerThemeId = 'classic' | 'amber' | 'sky' | 'rose' | 'emerald' | 'slate';
+
+export const BANNER_THEME_IDS: BannerThemeId[] = [
+  'classic',
+  'amber',
+  'sky',
+  'rose',
+  'emerald',
+  'slate',
+];
+
 // Synchronized verbatim with firebase-blueprint.json & firestore.rules
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 24;
 export const DISPLAY_NAME_MAX = 40;
 export const BIO_MAX = 160;
+export const PLAYER_TITLE_MAX = 24;
+export const CHAT_MESSAGE_MAX = 280;
 export const INVITE_CODE_REGEX = /^[A-Z0-9]{6}$/;
 
 export interface PlayerProfile {
@@ -18,6 +52,9 @@ export interface PlayerProfile {
   displayName: string;
   avatarId: AvatarId;
   bio: string;
+  emblemIcon?: EmblemIconId;
+  bannerTheme?: BannerThemeId;
+  playerTitle?: string;
   visibility: 'public';
   wins: number;
   losses: number;
@@ -31,6 +68,17 @@ export interface PlayerProfile {
   lastActiveAt: Timestamp | null;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderUid: string;
+  senderName: string;
+  senderAvatar: AvatarId;
+  senderEmblem: EmblemIconId;
+  senderTitle?: string;
+  text: string;
+  createdAt: Timestamp | null;
 }
 
 export interface PrivateUser {

@@ -63,7 +63,7 @@ export interface ArcadeMatchPlayer {
 }
 
 export interface ArcadeGameProps<TState> {
-  mode: 'online' | 'local';
+  mode: 'online' | 'local' | 'bot';
   state: TState;
   player1: ArcadeMatchPlayer;
   player2: ArcadeMatchPlayer;

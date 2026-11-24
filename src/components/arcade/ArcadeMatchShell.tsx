@@ -13,12 +13,16 @@ import {
 import { getCatalogEntry } from '../../data/arcadeCatalog';
 import { generateArcadeShareUrl } from '../../services/arcadeService';
 import type { ArcadeGameType, ArcadeMatchPlayer } from '../../types/arcade';
+import type { PlayerProfile } from '../../types/game';
 import { AvatarBadge } from '../AvatarBadge';
+import { MatchChatPanel } from '../chat/MatchChatPanel';
 import { GameIcon } from './GameIcon';
 
 interface ArcadeMatchShellProps {
-  mode: 'online' | 'local';
+  mode: 'online' | 'local' | 'bot';
   gameType: ArcadeGameType;
+  roomId?: string;
+  currentUser?: PlayerProfile;
   inviteCode?: string;
   isWaiting?: boolean;
   isHost?: boolean;
@@ -44,6 +48,8 @@ interface ArcadeMatchShellProps {
 export function ArcadeMatchShell({
   mode,
   gameType,
+  roomId = '',
+  currentUser,
   inviteCode = '',
   isWaiting = false,
   isHost = false,
@@ -277,6 +283,16 @@ export function ArcadeMatchShell({
           {/* Game Board Surface */}
           <div>{children}</div>
         </>
+      )}
+
+      {/* Online Match Chat */}
+      {mode === 'online' && roomId && currentUser && (
+        <MatchChatPanel
+          roomCollection="arcadeRooms"
+          roomId={roomId}
+          currentUser={currentUser}
+          defaultExpanded={!isWaiting}
+        />
       )}
     </div>
   );

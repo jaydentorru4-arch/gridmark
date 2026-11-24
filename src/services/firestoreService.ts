@@ -21,8 +21,10 @@ import {
 } from '../lib/gameLogic';
 import type {
   AvatarId,
+  BannerThemeId,
   CellValue,
   Challenge,
+  EmblemIconId,
   GameRoom,
   GameVisibility,
   PlayerProfile,
@@ -110,6 +112,9 @@ export async function registerPlayerProfile(
       displayName: input.displayName.trim(),
       avatarId: input.avatarId,
       bio: input.bio.trim(),
+      emblemIcon: 'letter',
+      bannerTheme: 'classic',
+      playerTitle: '',
       visibility: 'public',
       wins: 0,
       losses: 0,
@@ -146,6 +151,9 @@ export async function updatePlayerProfile(
     displayName: string;
     avatarId: AvatarId;
     bio: string;
+    emblemIcon?: EmblemIconId;
+    bannerTheme?: BannerThemeId;
+    playerTitle?: string;
   },
 ): Promise<void> {
   const path = `players/${uid}`;
@@ -155,6 +163,9 @@ export async function updatePlayerProfile(
       displayName: input.displayName.trim(),
       avatarId: input.avatarId,
       bio: input.bio.trim(),
+      emblemIcon: input.emblemIcon ?? 'letter',
+      bannerTheme: input.bannerTheme ?? 'classic',
+      playerTitle: (input.playerTitle ?? '').trim().slice(0, 24),
       updatedAt: serverTimestamp(),
     });
   } catch (error) {

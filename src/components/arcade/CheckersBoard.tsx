@@ -23,7 +23,7 @@ export function CheckersBoard({
     state.chainIdx !== -1 ? state.chainIdx : null,
   );
   const [flipped, setFlipped] = useState<boolean>(
-    mode === 'online' && viewerUid === player2.uid,
+    mode !== 'local' && viewerUid === player2.uid,
   );
 
   const mySide: CheckerSide | 'both' | 'spectator' =

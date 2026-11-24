@@ -175,7 +175,7 @@ export function HangmanArena({
 
   // Playing / Finished Phase
   const wrongCount = state.wrongLetters.length;
-  const revealAll = isFinished || (mode === 'online' && isSetter);
+  const revealAll = isFinished || (mode !== 'local' && isSetter);
 
   return (
     <div className="bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A] max-w-2xl mx-auto space-y-6">

@@ -8,6 +8,7 @@ import { HistoryView } from './components/HistoryView';
 import { LeaderboardView } from './components/LeaderboardView';
 import { PlayView } from './components/PlayView';
 import { ProfileView } from './components/ProfileView';
+import { PublicChillChatDrawer } from './components/chat/PublicChillChatDrawer';
 import { auth } from './lib/firebase';
 import {
   clearRoomCodeFromUrl,
@@ -426,6 +427,11 @@ function GridmarkApp() {
           />
         )}
       </main>
+
+      <PublicChillChatDrawer
+        currentUser={profile}
+        onlineCount={onlinePlayers.length}
+      />
     </div>
   );
 }

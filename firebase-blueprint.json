@@ -36,6 +36,22 @@
           "minLength": 0,
           "maxLength": 160
         },
+        "emblemIcon": {
+          "type": "string",
+          "description": "Selected emblem icon shown inside the player's avatar badge.",
+          "enum": ["letter", "crown", "flame", "star", "zap", "shield", "sparkles", "ghost"]
+        },
+        "bannerTheme": {
+          "type": "string",
+          "description": "Selected background banner theme for the player card.",
+          "enum": ["classic", "amber", "sky", "rose", "emerald", "slate"]
+        },
+        "playerTitle": {
+          "type": "string",
+          "description": "Custom or preset title tag displayed on the player card and chat.",
+          "minLength": 0,
+          "maxLength": 24
+        },
         "visibility": {
           "type": "string",
           "description": "Public visibility marker for leaderboard queries.",
@@ -569,6 +585,87 @@
         }
       },
       "required": ["roomId", "hostUid", "gameType", "createdAt"]
+    },
+    "LoungeMessage": {
+      "title": "LoungeMessage",
+      "description": "Public chill chat message posted in the global Gridmark lounge.",
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": ["chill"]
+        },
+        "senderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "senderAvatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "senderEmblem": {
+          "type": "string",
+          "enum": ["letter", "crown", "flame", "star", "zap", "shield", "sparkles", "ghost"]
+        },
+        "senderTitle": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 24
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["channel", "senderUid", "senderName", "senderAvatar", "senderEmblem", "senderTitle", "text", "createdAt"]
+    },
+    "MatchMessage": {
+      "title": "MatchMessage",
+      "description": "Real-time in-game chat message inside a multiplayer match room.",
+      "type": "object",
+      "properties": {
+        "senderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "senderAvatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "senderEmblem": {
+          "type": "string",
+          "enum": ["letter", "crown", "flame", "star", "zap", "shield", "sparkles", "ghost"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["senderUid", "senderName", "senderAvatar", "senderEmblem", "text", "createdAt"]
     }
   },
   "firestore": {
@@ -584,6 +681,10 @@
       "schema": { "$ref": "#/entities/GameRoom" },
       "description": "Multiplayer Tic-Tac-Toe rooms, active boards, and completed match records."
     },
+    "/games/{gameId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/MatchMessage" },
+      "description": "In-game chat messages between participants of a Tic-Tac-Toe room."
+    },
     "/roomCodes/{inviteCode}": {
       "schema": { "$ref": "#/entities/RoomCode" },
       "description": "O(1) invite code to gameId lookup table."
@@ -596,9 +697,17 @@
       "schema": { "$ref": "#/entities/ArcadeRoom" },
       "description": "Multiplayer rooms for Chess, Connect Four, Battleship, RPS, Checkers, Word Guess, Hangman, Dots & Boxes, Crazy Eights, and Reversi."
     },
+    "/arcadeRooms/{roomId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/MatchMessage" },
+      "description": "In-game chat messages between participants of an Arcade room."
+    },
     "/arcadeCodes/{inviteCode}": {
       "schema": { "$ref": "#/entities/ArcadeCode" },
       "description": "O(1) invite code lookup for arcadeRooms."
+    },
+    "/loungeMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/LoungeMessage" },
+      "description": "Public chill chat messages visible to signed-in players."
     }
   }
 }

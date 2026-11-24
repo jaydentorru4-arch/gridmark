@@ -57,7 +57,7 @@ export function ChessBoard({
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [pendingPromo, setPendingPromo] = useState<{ from: number; to: number } | null>(null);
   const [flippedManual, setFlippedManual] = useState<boolean>(
-    mode === 'online' && viewerUid === player2.uid,
+    mode !== 'local' && viewerUid === player2.uid,
   );
 
   const myColor: ChessColor | 'both' | 'spectator' =

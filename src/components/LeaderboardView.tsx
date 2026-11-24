@@ -139,12 +139,24 @@ export function LeaderboardView({ players, currentUser }: LeaderboardViewProps) 
                       </td>
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <AvatarBadge avatarId={player.avatarId} name={player.displayName} size="sm" />
+                          <AvatarBadge
+                            avatarId={player.avatarId}
+                            name={player.displayName}
+                            emblemIcon={player.emblemIcon}
+                            size="sm"
+                          />
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate">
-                              {player.displayName}
-                              {isMe ? ' (You)' : ''}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className="font-semibold text-slate-900 truncate">
+                                {player.displayName}
+                                {isMe ? ' (You)' : ''}
+                              </p>
+                              {player.playerTitle ? (
+                                <span className="px-1.5 py-0.5 rounded border border-slate-300 bg-amber-100 text-[10px] font-bold text-slate-800">
+                                  {player.playerTitle}
+                                </span>
+                              ) : null}
+                            </div>
                             <p className="text-xs text-slate-500 truncate">@{player.username}</p>
                           </div>
                         </div>

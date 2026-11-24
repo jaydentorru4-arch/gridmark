@@ -10,6 +10,7 @@ import {
 } from '../services/firestoreService';
 import type { GameRoom, PlayerProfile } from '../types/game';
 import { AvatarBadge } from './AvatarBadge';
+import { MatchChatPanel } from './chat/MatchChatPanel';
 
 interface GameBoardProps {
   room: GameRoom;
@@ -474,6 +475,13 @@ export function GameBoard({
               </button>
             </div>
           </div>
+
+          {/* In-Game Real-Time Match Chat */}
+          <MatchChatPanel
+            roomCollection="games"
+            roomId={room.id}
+            currentUser={currentUser}
+          />
         </div>
       </div>
     </div>

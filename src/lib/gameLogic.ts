@@ -2,6 +2,7 @@ import {
   BIO_MAX,
   DISPLAY_NAME_MAX,
   INVITE_CODE_REGEX,
+  PLAYER_TITLE_MAX,
   USERNAME_MAX,
   USERNAME_MIN,
   USERNAME_REGEX,
@@ -129,10 +130,12 @@ export function validateProfileInput(input: {
   username: string;
   displayName: string;
   bio: string;
+  playerTitle?: string;
 }): string | null {
   const username = input.username.trim();
   const displayName = input.displayName.trim();
   const bio = input.bio.trim();
+  const playerTitle = (input.playerTitle ?? '').trim();
 
   if (username.length < USERNAME_MIN || username.length > USERNAME_MAX) {
     return `Username must be between ${USERNAME_MIN} and ${USERNAME_MAX} characters.`;
@@ -145,6 +148,9 @@ export function validateProfileInput(input: {
   }
   if (bio.length > BIO_MAX) {
     return `Bio cannot exceed ${BIO_MAX} characters.`;
+  }
+  if (playerTitle.length > PLAYER_TITLE_MAX) {
+    return `Player title cannot exceed ${PLAYER_TITLE_MAX} characters.`;
   }
   return null;
 }
