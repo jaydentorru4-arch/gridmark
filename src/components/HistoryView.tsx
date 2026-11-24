@@ -13,21 +13,21 @@ type HistoryFilter = 'all' | 'win' | 'loss' | 'draw';
 
 function MiniBoard({ board, winningLine }: { board: GameRoom['board']; winningLine: number[] }) {
   return (
-    <div className="grid grid-cols-3 gap-1 w-16 h-16 p-1 bg-slate-100 border border-slate-200 rounded-md shrink-0">
+    <div className="grid grid-cols-3 gap-1 w-16 h-16 p-1.5 bg-amber-100/80 border-2 border-slate-900 rounded-xl shrink-0">
       {board.map((cell, idx) => {
         const isWin = winningLine.includes(idx);
         return (
           <div
             key={idx}
-            className={`rounded-[3px] flex items-center justify-center text-[10px] font-display font-bold ${
+            className={`rounded-[4px] border border-slate-900/20 flex items-center justify-center text-[10px] font-display font-bold ${
               isWin
-                ? 'bg-emerald-100 text-emerald-800'
+                ? 'bg-emerald-200 text-emerald-900'
                 : 'bg-white text-slate-700'
             }`}
           >
             <span
               className={
-                cell === 'X' ? 'text-rose-600' : cell === 'O' ? 'text-blue-600' : ''
+                cell === 'X' ? 'text-rose-500' : cell === 'O' ? 'text-blue-600' : ''
               }
             >
               {cell}
@@ -65,15 +65,15 @@ export function HistoryView({ currentUser, myGames, onOpenGame }: HistoryViewPro
           </p>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-lg">
+        <div className="flex items-center gap-1 p-1.5 bg-white border-2 border-slate-900 rounded-xl shadow-[0_3px_0_0_#0F172A]">
           {(['all', 'win', 'loss', 'draw'] as const).map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md capitalize cursor-pointer transition-colors ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize cursor-pointer transition-colors ${
                 filter === key
-                  ? 'bg-white text-slate-900 shadow-xs'
+                  ? 'bg-amber-300 text-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -84,8 +84,8 @@ export function HistoryView({ currentUser, myGames, onOpenGame }: HistoryViewPro
       </div>
 
       {filteredGames.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-          <p className="text-sm font-semibold text-slate-800">
+        <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-[0_5px_0_0_#0F172A] p-10 text-center">
+          <p className="text-sm font-bold text-slate-900">
             {finishedGames.length === 0 ? 'No completed matches yet' : 'No matches match this filter'}
           </p>
           <p className="mt-1 text-xs text-slate-500">
@@ -93,7 +93,7 @@ export function HistoryView({ currentUser, myGames, onOpenGame }: HistoryViewPro
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+        <div className="bg-white border-2 border-slate-900 rounded-2xl shadow-[0_5px_0_0_#0F172A] divide-y-2 divide-slate-100 overflow-hidden">
           {filteredGames.map((game) => {
             const iAmX = game.playerXUid === currentUser.uid;
             const opponentName = iAmX ? game.playerOName : game.playerXName;
@@ -143,7 +143,7 @@ export function HistoryView({ currentUser, myGames, onOpenGame }: HistoryViewPro
                   <button
                     type="button"
                     onClick={() => onOpenGame(game.id)}
-                    className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer whitespace-nowrap"
+                    className="px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900 shadow-[0_2px_0_0_#0F172A] hover:bg-amber-100 active:translate-y-[1px] active:shadow-none cursor-pointer whitespace-nowrap"
                   >
                     Inspect
                   </button>

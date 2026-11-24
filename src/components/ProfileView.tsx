@@ -77,7 +77,7 @@ export function ProfileView({
   return (
     <div className="space-y-8">
       {/* Player Stats Overview */}
-      <section className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
+      <section className="bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <AvatarBadge avatarId={profile.avatarId} name={profile.displayName} size="lg" />
@@ -100,14 +100,14 @@ export function ProfileView({
           <button
             type="button"
             onClick={() => signOut(auth)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-slate-900 bg-white text-sm font-bold text-slate-800 shadow-[0_2px_0_0_#0F172A] hover:bg-rose-50 active:translate-y-[1px] active:shadow-none cursor-pointer whitespace-nowrap"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
           </button>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="mt-8 pt-6 border-t-2 border-slate-100 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
           <div>
             <p className="text-xs text-slate-500">Wins</p>
             <p className="font-display text-2xl font-bold text-emerald-700 tabular-nums mt-0.5">
@@ -149,7 +149,7 @@ export function ProfileView({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Profile Management Form */}
-        <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
+        <section className="lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A]">
           <h2 className="font-display text-lg font-bold text-slate-900">Edit Profile</h2>
           <p className="mt-1 text-xs text-slate-500">
             Update your public player name, handle, emblem color, or bio.
@@ -242,7 +242,7 @@ export function ProfileView({
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[2px] active:shadow-none disabled:opacity-50 cursor-pointer"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -251,19 +251,19 @@ export function ProfileView({
 
         {/* Preferences & Shareable URL */}
         <section className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[0_5px_0_0_#0F172A]">
             <h2 className="font-display text-base font-bold text-slate-900">Preferences</h2>
             <div className="mt-4 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-slate-900">Board Sound Effects</p>
+                <p className="text-sm font-bold text-slate-900">Board Sound Effects</p>
                 <p className="text-xs text-slate-500">Play subtle chimes on moves and match end</p>
               </div>
               <button
                 type="button"
                 onClick={onToggleSound}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                className={`px-3.5 py-1.5 rounded-xl border-2 border-slate-900 text-xs font-bold shadow-[0_2px_0_0_#0F172A] active:translate-y-[1px] active:shadow-none cursor-pointer transition-colors ${
                   soundEnabled
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-amber-300 text-slate-900'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -272,7 +272,7 @@ export function ProfileView({
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="bg-sky-50 border-2 border-slate-900 rounded-2xl p-6 shadow-[0_5px_0_0_#0F172A]">
             <h2 className="font-display text-base font-bold text-slate-900">Share Gridmark</h2>
             <p className="mt-1 text-xs text-slate-600 leading-relaxed">
               Share this URL with other players so they can create an account and challenge you online.
@@ -283,12 +283,12 @@ export function ProfileView({
                 readOnly
                 value={shareUrl}
                 aria-label="Shareable application URL"
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 font-mono text-xs text-slate-700"
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl border-2 border-slate-900 bg-white font-mono text-xs text-slate-800"
               />
               <button
                 type="button"
                 onClick={handleCopyAppUrl}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 cursor-pointer whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[1px] active:shadow-none cursor-pointer whitespace-nowrap shrink-0"
               >
                 {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copiedUrl ? 'Copied' : 'Copy'}

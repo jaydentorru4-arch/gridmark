@@ -44,16 +44,16 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8 text-center">
-            <h1 className="text-xl font-bold text-slate-900">Something interrupted the match</h1>
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[0_6px_0_0_#0F172A] text-center">
+            <h1 className="font-display text-xl font-bold text-slate-900">Something interrupted the match</h1>
             <p className="mt-2 text-sm text-slate-600 leading-relaxed break-words">
               {this.state.message}
             </p>
             <button
               type="button"
               onClick={this.handleReset}
-              className="mt-6 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap"
+              className="mt-6 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[2px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
             >
               <RotateCcw className="w-4 h-4" />
               Return to Lobby

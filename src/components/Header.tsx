@@ -26,13 +26,13 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
+      <header className="sticky top-0 z-30 bg-[#FFFDF7]/95 backdrop-blur-xs border-b-2 border-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
           {/* Zone 1: Single-line Brand Wordmark */}
           <button
             type="button"
             onClick={() => onSelectTab('play')}
-            className="font-display text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 rounded"
+            className="font-display text-2xl font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 rounded"
           >
             Gridmark
           </button>
@@ -46,14 +46,14 @@ export function Header({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 ${
+                  className={`relative py-2 text-sm font-bold whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 ${
                     isActive ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {item.label}
                   {isActive && (
                     <span
-                      className="absolute inset-x-0 -bottom-[17px] h-0.5 bg-blue-600"
+                      className="absolute inset-x-0 -bottom-[17px] h-1 bg-rose-500"
                       aria-hidden="true"
                     />
                   )}
@@ -67,9 +67,9 @@ export function Header({
             <button
               type="button"
               onClick={() => onSelectTab('profile')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+              className={`px-4 py-2 rounded-xl border-2 border-slate-900 text-sm font-bold shadow-[0_2px_0_0_#0F172A] active:translate-y-[1px] active:shadow-none whitespace-nowrap shrink-0 cursor-pointer transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                 activeTab === 'profile'
-                  ? 'bg-slate-900 text-white'
+                  ? 'bg-amber-300 text-slate-900'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
@@ -81,7 +81,7 @@ export function Header({
 
       {/* Mobile bottom navigation bar (<= 15% mobile viewport height) */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-5 h-14"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFDF7] border-t-2 border-slate-900 grid grid-cols-5 h-14"
         aria-label="Mobile navigation"
       >
         <button

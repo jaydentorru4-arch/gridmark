@@ -76,31 +76,31 @@ export function ChallengesView({
       </div>
 
       {errorMsg && (
-        <p className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3">
+        <p className="text-sm font-medium text-rose-700 bg-rose-50 border-2 border-rose-300 rounded-xl px-4 py-3">
           {errorMsg}
         </p>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Incoming Challenges */}
-        <section className="bg-white border border-slate-200 rounded-xl p-6">
+        <section className="bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[0_5px_0_0_#0F172A]">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-lg font-bold text-slate-900">Incoming</h2>
-            <span className="text-xs font-mono font-semibold text-slate-500 tabular-nums">
+            <span className="text-xs font-mono font-bold text-slate-600 tabular-nums">
               {pendingIncoming.length} pending
             </span>
           </div>
 
           {pendingIncoming.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
-              <Swords className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-slate-700">No incoming challenges</p>
+            <div className="mt-4 rounded-xl border-2 border-dashed border-slate-300 bg-amber-50/40 p-6 text-center">
+              <Swords className="w-5 h-5 text-slate-500 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-800">No incoming challenges</p>
               <p className="mt-1 text-xs text-slate-500">
                 When another player challenges you from the lobby, it appears here in real time.
               </p>
             </div>
           ) : (
-            <div className="mt-4 divide-y divide-slate-100 border border-slate-200 rounded-lg">
+            <div className="mt-4 divide-y divide-slate-200 border-2 border-slate-900 rounded-xl overflow-hidden">
               {pendingIncoming.map((c) => (
                 <div
                   key={c.id}
@@ -122,7 +122,7 @@ export function ChallengesView({
                       type="button"
                       disabled={busyId === c.id}
                       onClick={() => handleDecline(c.id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-800 shadow-[0_2px_0_0_#0F172A] hover:bg-slate-100 active:translate-y-[1px] active:shadow-none cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                       Decline
@@ -131,7 +131,7 @@ export function ChallengesView({
                       type="button"
                       disabled={busyId === c.id}
                       onClick={() => handleAccept(c)}
-                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[1px] active:shadow-none cursor-pointer"
                     >
                       <Check className="w-3.5 h-3.5" />
                       Accept
@@ -171,30 +171,30 @@ export function ChallengesView({
         </section>
 
         {/* Outgoing Challenges */}
-        <section className="bg-white border border-slate-200 rounded-xl p-6">
+        <section className="bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[0_5px_0_0_#0F172A]">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-lg font-bold text-slate-900">Sent Challenges</h2>
-            <span className="text-xs font-mono font-semibold text-slate-500 tabular-nums">
+            <span className="text-xs font-mono font-bold text-slate-600 tabular-nums">
               {pendingOutgoing.length} active
             </span>
           </div>
 
           {outgoingChallenges.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
-              <p className="text-sm font-medium text-slate-700">No challenges sent</p>
+            <div className="mt-4 rounded-xl border-2 border-dashed border-slate-300 bg-amber-50/40 p-6 text-center">
+              <p className="text-sm font-bold text-slate-800">No challenges sent</p>
               <p className="mt-1 text-xs text-slate-500">
                 Select any online player in the Play lobby to send a direct duel.
               </p>
             </div>
           ) : (
-            <div className="mt-4 divide-y divide-slate-100 border border-slate-200 rounded-lg">
+            <div className="mt-4 divide-y divide-slate-200 border-2 border-slate-900 rounded-xl overflow-hidden">
               {outgoingChallenges.slice(0, 10).map((c) => (
                 <div
                   key={c.id}
                   className="p-4 flex items-center justify-between gap-4"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
+                    <p className="text-sm font-bold text-slate-900 truncate">
                       {c.targetName}
                     </p>
                     <p className="text-xs text-slate-500 capitalize">
@@ -207,7 +207,7 @@ export function ChallengesView({
                         type="button"
                         disabled={busyId === c.id}
                         onClick={() => handleCancel(c.id)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-800 shadow-[0_2px_0_0_#0F172A] hover:bg-slate-100 active:translate-y-[1px] active:shadow-none cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -216,7 +216,7 @@ export function ChallengesView({
                       <button
                         type="button"
                         onClick={() => onEnterGame(c.gameId)}
-                        className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[1px] active:shadow-none cursor-pointer"
                       >
                         Enter Match
                       </button>

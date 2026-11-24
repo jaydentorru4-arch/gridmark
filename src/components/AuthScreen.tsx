@@ -8,7 +8,7 @@ import {
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { Bot, Check, LogOut, Mail, RefreshCw } from 'lucide-react';
+import { Bot, Check, LogOut, Mail, RefreshCw, Users } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
 import { sanitizeUsername, validateProfileInput } from '../lib/gameLogic';
 import { soundFx } from '../lib/sound';
@@ -16,6 +16,7 @@ import { registerPlayerProfile } from '../services/firestoreService';
 import { AVATAR_IDS, BIO_MAX, DISPLAY_NAME_MAX, USERNAME_MAX, type AvatarId } from '../types/game';
 import { AVATAR_STYLES } from './AvatarBadge';
 import { BotGameBoard } from './BotGameBoard';
+import { LocalGameBoard } from './LocalGameBoard';
 
 interface AuthScreenProps {
   firebaseUser: FirebaseUser | null;
@@ -45,11 +46,28 @@ export function AuthScreen({
   const [avatarId, setAvatarId] = useState<AvatarId>('cobalt');
   const [bio, setBio] = useState('');
   const [soloBotOpen, setSoloBotOpen] = useState(false);
+  const [localFriendOpen, setLocalFriendOpen] = useState(false);
   const [soloSoundEnabled, setSoloSoundEnabled] = useState(true);
+
+  if (localFriendOpen) {
+    return (
+      <div className="min-h-screen py-8 px-4 sm:px-6">
+        <LocalGameBoard
+          soundEnabled={soloSoundEnabled}
+          onToggleSound={() => {
+            const next = !soloSoundEnabled;
+            setSoloSoundEnabled(next);
+            soundFx.setEnabled(next);
+          }}
+          onBack={() => setLocalFriendOpen(false)}
+        />
+      </div>
+    );
+  }
 
   if (soloBotOpen) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] py-8 px-4 sm:px-6">
+      <div className="min-h-screen py-8 px-4 sm:px-6">
         <BotGameBoard
           playerName="Guest Player"
           playerAvatar="cobalt"
@@ -176,9 +194,9 @@ export function AuthScreen({
   // Case A: Signed in via Email/Password but email not verified yet
   if (firebaseUser && !firebaseUser.emailVerified) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8">
-          <div className="w-11 h-11 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-5">
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[0_6px_0_0_#0F172A]">
+          <div className="w-11 h-11 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 flex items-center justify-center mb-5">
             <Mail className="w-5 h-5" />
           </div>
           <h1 className="font-display text-2xl font-bold text-slate-900 text-balance">
@@ -205,7 +223,7 @@ export function AuthScreen({
               type="button"
               onClick={handleRefreshVerification}
               disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[2px] active:shadow-none disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               I have verified my email
@@ -214,7 +232,7 @@ export function AuthScreen({
               type="button"
               onClick={handleResendVerification}
               disabled={busy}
-              className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 cursor-pointer"
+              className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-900 bg-white text-slate-800 text-sm font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-amber-50 active:translate-y-[1px] active:shadow-none cursor-pointer"
             >
               Resend verification email
             </button>
@@ -235,8 +253,8 @@ export function AuthScreen({
   // Case B: Authenticated & verified, completing first-time player profile
   if (firebaseUser && needsProfileSetup) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center p-6">
-        <div className="max-w-lg w-full bg-white border border-slate-200 rounded-xl p-8">
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-lg w-full bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[0_6px_0_0_#0F172A]">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="font-display text-2xl font-bold text-slate-900">
@@ -339,7 +357,7 @@ export function AuthScreen({
             <button
               type="submit"
               disabled={busy}
-              className="w-full py-2.5 px-5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
+              className="w-full py-3 px-5 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[2px] active:shadow-none disabled:opacity-50 transition-all cursor-pointer"
             >
               {busy ? 'Creating Profile...' : pendingInviteCode ? `Enter Room ${pendingInviteCode}` : 'Enter Lobby'}
             </button>
@@ -351,22 +369,22 @@ export function AuthScreen({
 
   // Case C: Unauthenticated Sign In / Registration View
   return (
-    <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6">
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         {/* Left Editorial / Board Preview Panel */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-8 sm:p-10 flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-8 sm:p-10 shadow-[0_6px_0_0_#0F172A] flex flex-col justify-between">
           <div>
-            <span className="font-display text-lg font-bold tracking-tight text-slate-900">
+            <span className="font-display text-2xl font-bold tracking-tight text-slate-900">
               Gridmark
             </span>
-            <h1 className="mt-6 font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 text-balance leading-[1.15]">
-              Real-time Tic-Tac-Toe built for head-to-head matches.
+            <h1 className="mt-5 font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 text-balance leading-[1.15]">
+              Tic-Tac-Toe, built for fast matches with friends.
             </h1>
             <p className="mt-3 text-base text-slate-600 leading-relaxed max-w-xl">
-              Create private invite rooms, challenge classmates online, track every match in your history, and climb the live points leaderboard.
+              Challenge friends online with 6-character room codes, pass the phone in person, or warm up solo against the Bot.
             </p>
             {pendingInviteCode && (
-              <p className="mt-4 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+              <p className="mt-4 text-sm font-semibold text-blue-800 bg-sky-50 border-2 border-slate-900 rounded-xl px-4 py-2.5">
                 Invite ready · Sign in to join room{' '}
                 <span className="font-mono font-bold">{pendingInviteCode}</span>
               </p>
@@ -374,19 +392,19 @@ export function AuthScreen({
           </div>
 
           {/* Static Decorative 3x3 Tabletop Specimen */}
-          <div className="mt-8 pt-8 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="grid grid-cols-3 gap-2 w-40 shrink-0" aria-hidden="true">
+          <div className="mt-8 pt-8 border-t-2 border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="grid grid-cols-3 gap-2 w-44 p-2.5 rounded-2xl bg-amber-100/80 border-2 border-slate-900 shadow-[0_4px_0_0_#0F172A] shrink-0" aria-hidden="true">
               {(['X', 'O', '', 'O', 'X', '', '', '', 'X'] as const).map((mark, idx) => (
                 <div
                   key={idx}
-                  className={`aspect-square rounded-lg border flex items-center justify-center font-display font-bold text-lg ${
+                  className={`aspect-square rounded-lg border-2 border-slate-900 flex items-center justify-center font-display font-bold text-lg ${
                     idx === 0 || idx === 4 || idx === 8
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-700'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-white text-slate-700'
                   }`}
                 >
                   {mark === 'X' ? (
-                    <span className="text-rose-600">X</span>
+                    <span className="text-rose-500">X</span>
                   ) : mark === 'O' ? (
                     <span className="text-blue-600">O</span>
                   ) : null}
@@ -395,19 +413,19 @@ export function AuthScreen({
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-slate-600">
               <div>
-                <p className="font-semibold text-slate-900">6-char Invite Codes</p>
-                <p className="text-xs text-slate-500 mt-0.5">Instant shareable room links</p>
+                <p className="font-bold text-slate-900">Invite Codes</p>
+                <p className="text-xs text-slate-500 mt-0.5">Instant shareable links</p>
               </div>
               <div>
-                <p className="font-semibold text-slate-900">Live Sync</p>
-                <p className="text-xs text-slate-500 mt-0.5">Sub-second Cloud Firestore state</p>
+                <p className="font-bold text-slate-900">Pass & Play</p>
+                <p className="text-xs text-slate-500 mt-0.5">Play in person on one screen</p>
               </div>
               <div>
-                <p className="font-semibold text-slate-900">Direct Challenges</p>
-                <p className="text-xs text-slate-500 mt-0.5">Duel any online player</p>
+                <p className="font-bold text-slate-900">Bot Arena</p>
+                <p className="text-xs text-slate-500 mt-0.5">Casual to Unbeatable AI</p>
               </div>
               <div>
-                <p className="font-semibold text-slate-900">Ranked Scoring</p>
+                <p className="font-bold text-slate-900">Live Leaderboard</p>
                 <p className="text-xs text-slate-500 mt-0.5">3 pts win · 1 pt draw</p>
               </div>
             </div>
@@ -415,7 +433,7 @@ export function AuthScreen({
         </div>
 
         {/* Right Sign-In / Register Card */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-8 flex flex-col justify-center">
+        <div className="lg:col-span-5 bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[0_6px_0_0_#0F172A] flex flex-col justify-center">
           <h2 className="font-display text-xl font-bold text-slate-900">
             {authTab === 'login' ? 'Sign in to play' : 'Create an account'}
           </h2>
@@ -528,7 +546,7 @@ export function AuthScreen({
             <button
               type="submit"
               disabled={busy}
-              className="w-full py-2.5 px-4 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[2px] active:shadow-none disabled:opacity-50 transition-all cursor-pointer"
             >
               {busy
                 ? 'Please wait...'
@@ -538,14 +556,22 @@ export function AuthScreen({
             </button>
           </form>
 
-          <div className="mt-5 pt-5 border-t border-slate-200">
+          <div className="mt-5 pt-5 border-t-2 border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setLocalFriendOpen(true)}
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border-2 border-slate-900 bg-rose-500 text-white text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-rose-600 active:translate-y-[1px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Users className="w-3.5 h-3.5" />
+              Pass & Play (Friend)
+            </button>
             <button
               type="button"
               onClick={() => setSoloBotOpen(true)}
-              className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[1px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
             >
-              <Bot className="w-4 h-4" />
-              Practice Alone vs Bot
+              <Bot className="w-3.5 h-3.5" />
+              Solo vs Bot
             </button>
           </div>
         </div>

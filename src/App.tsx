@@ -260,8 +260,8 @@ function GridmarkApp() {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center">
-        <p className="font-display text-sm font-semibold text-slate-600">Loading Gridmark...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-display text-sm font-bold text-slate-700">Loading Gridmark...</p>
       </div>
     );
   }
@@ -282,14 +282,14 @@ function GridmarkApp() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center">
-        <p className="font-display text-sm font-semibold text-slate-600">Loading player profile...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-display text-sm font-bold text-slate-700">Loading player profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8] flex flex-col pb-16 md:pb-10">
+    <div className="min-h-screen flex flex-col pb-16 md:pb-10">
       <Header
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
