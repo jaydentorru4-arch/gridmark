@@ -394,6 +394,181 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "ArcadeRoom": {
+      "title": "ArcadeRoom",
+      "description": "Real-time multiplayer match room for Gridmark Arcade games.",
+      "type": "object",
+      "properties": {
+        "inviteCode": {
+          "type": "string",
+          "description": "6-character alphanumeric room invite code.",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "gameType": {
+          "type": "string",
+          "description": "Arcade game identifier.",
+          "enum": [
+            "chess",
+            "connect4",
+            "battleship",
+            "rps",
+            "checkers",
+            "wordguess",
+            "hangman",
+            "dotsboxes",
+            "crazyeights",
+            "reversi"
+          ]
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private"]
+        },
+        "isPublicOpen": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "playing", "finished", "abandoned"]
+        },
+        "hostUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "player1Uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "player1Name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "player1Avatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "player2Uid": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "player2Name": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "player2Avatar": {
+          "type": "string",
+          "enum": ["", "coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "participantUids": {
+          "type": "array"
+        },
+        "currentTurnUid": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "winnerUid": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "resultSummary": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 140
+        },
+        "rematchRoomId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "state": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "inviteCode",
+        "gameType",
+        "visibility",
+        "isPublicOpen",
+        "status",
+        "hostUid",
+        "player1Uid",
+        "player1Name",
+        "player1Avatar",
+        "player2Uid",
+        "player2Name",
+        "player2Avatar",
+        "participantUids",
+        "currentTurnUid",
+        "winnerUid",
+        "resultSummary",
+        "rematchRoomId",
+        "state",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ArcadeCode": {
+      "title": "ArcadeCode",
+      "description": "O(1) invite code lookup mapping to an ArcadeRoom document.",
+      "type": "object",
+      "properties": {
+        "roomId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "gameType": {
+          "type": "string",
+          "enum": [
+            "chess",
+            "connect4",
+            "battleship",
+            "rps",
+            "checkers",
+            "wordguess",
+            "hangman",
+            "dotsboxes",
+            "crazyeights",
+            "reversi"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["roomId", "hostUid", "gameType", "createdAt"]
     }
   },
   "firestore": {
@@ -416,6 +591,14 @@
     "/challenges/{challengeId}": {
       "schema": { "$ref": "#/entities/Challenge" },
       "description": "Direct real-time player-to-player match challenges."
+    },
+    "/arcadeRooms/{roomId}": {
+      "schema": { "$ref": "#/entities/ArcadeRoom" },
+      "description": "Multiplayer rooms for Chess, Connect Four, Battleship, RPS, Checkers, Word Guess, Hangman, Dots & Boxes, Crazy Eights, and Reversi."
+    },
+    "/arcadeCodes/{inviteCode}": {
+      "schema": { "$ref": "#/entities/ArcadeCode" },
+      "description": "O(1) invite code lookup for arcadeRooms."
     }
   }
 }

@@ -1,18 +1,31 @@
-import { useState, type FormEvent } from 'react';
-import { ArrowRight, Bot, Plus, Swords, Users } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { ArrowRight, Bot, LayoutGrid, Plus, Swords, Users } from 'lucide-react';
+import { getCatalogEntry } from '../data/arcadeCatalog';
 import type { BotDifficulty } from '../lib/botAi';
 import { formatRelativeTime, normalizeInviteCode } from '../lib/gameLogic';
+import {
+  clearArcadeCodeFromUrl,
+  extractArcadeCodeFromLocation,
+  joinArcadeRoom,
+  resolveArcadeCode,
+  subscribeToMyArcadeRooms,
+  subscribeToOpenArcadeRooms,
+} from '../services/arcadeService';
 import {
   createGameRoom,
   joinGameRoom,
   resolveInviteCode,
   sendChallenge,
 } from '../services/firestoreService';
+import type { AllGameId, ArcadeRoom } from '../types/arcade';
 import type { Challenge, GameMark, GameRoom, GameVisibility, PlayerProfile } from '../types/game';
 import { AvatarBadge } from './AvatarBadge';
 import { BotGameBoard } from './BotGameBoard';
 import { GameBoard } from './GameBoard';
 import { LocalGameBoard } from './LocalGameBoard';
+import { ArcadeWorkspace } from './arcade/ArcadeWorkspace';
+import { GameIcon } from './arcade/GameIcon';
+import { GameSwitcherView } from './arcade/GameSwitcherView';
 
 interface PlayViewProps {
   currentUser: PlayerProfile;
@@ -52,6 +65,42 @@ export function PlayView({
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('tactical');
   const [botPlayerMark, setBotPlayerMark] = useState<GameMark>('X');
 
+  // 11-Game Switcher & Arcade Multiplayer State
+  const [selectedGame, setSelectedGame] = useState<AllGameId>('tictactoe');
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [activeArcadeRoomId, setActiveArcadeRoomId] = useState<string | null>(null);
+  const [openArcadeRooms, setOpenArcadeRooms] = useState<ArcadeRoom[]>([]);
+  const [myArcadeRooms, setMyArcadeRooms] = useState<ArcadeRoom[]>([]);
+  const [arcadeInviteError, setArcadeInviteError] = useState('');
+
+  useEffect(() => {
+    const unsubOpen = subscribeToOpenArcadeRooms(setOpenArcadeRooms);
+    const unsubMine = subscribeToMyArcadeRooms(currentUser.uid, setMyArcadeRooms);
+    return () => {
+      unsubOpen();
+      unsubMine();
+    };
+  }, [currentUser.uid]);
+
+  useEffect(() => {
+    const code = extractArcadeCodeFromLocation();
+    if (!code) return;
+    void (async () => {
+      try {
+        const { roomId, gameType } = await resolveArcadeCode(code);
+        await joinArcadeRoom(roomId, currentUser);
+        setSelectedGame(gameType);
+        setActiveArcadeRoomId(roomId);
+        setShowSwitcher(false);
+      } catch (err) {
+        setArcadeInviteError(
+          err instanceof Error ? err.message : `Could not join arcade room ${code}.`,
+        );
+        clearArcadeCodeFromUrl();
+      }
+    })();
+  }, [currentUser]);
+
   if (activeRoom) {
     return (
       <GameBoard
@@ -61,6 +110,44 @@ export function PlayView({
         onToggleSound={onToggleSound}
         onOpenGame={onOpenGame}
         onLeaveToLobby={onLeaveRoom}
+      />
+    );
+  }
+
+  if (showSwitcher) {
+    return (
+      <GameSwitcherView
+        selectedGame={selectedGame}
+        onSelectGame={(nextGame) => {
+          if (nextGame !== selectedGame) {
+            setActiveArcadeRoomId(null);
+            clearArcadeCodeFromUrl();
+          }
+          setSelectedGame(nextGame);
+          setLocalMode(false);
+          setBotMode(false);
+          setShowSwitcher(false);
+        }}
+        onClose={() => setShowSwitcher(false)}
+      />
+    );
+  }
+
+  if (selectedGame !== 'tictactoe') {
+    const myActiveArcade = myArcadeRooms.filter(
+      (r) => r.status === 'waiting' || r.status === 'playing',
+    );
+    return (
+      <ArcadeWorkspace
+        gameType={selectedGame}
+        currentUser={currentUser}
+        openRooms={openArcadeRooms}
+        myActiveRooms={myActiveArcade}
+        activeRoomId={activeArcadeRoomId}
+        soundEnabled={soundEnabled}
+        onToggleSound={onToggleSound}
+        onSelectRoom={setActiveArcadeRoomId}
+        onOpenSwitcher={() => setShowSwitcher(true)}
       />
     );
   }
@@ -153,8 +240,48 @@ export function PlayView({
   );
   const opponents = onlinePlayers.filter((p) => p.uid !== currentUser.uid);
 
+  const tttCatalog = getCatalogEntry('tictactoe');
+
   return (
     <div className="space-y-8">
+      {/* Game Switcher Access Bar */}
+      <div className="bg-white border-2 border-slate-900 rounded-2xl px-5 py-4 shadow-[0_4px_0_0_#0F172A] flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-10 h-10 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 flex items-center justify-center shrink-0">
+            <GameIcon gameId="tictactoe" className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-display font-bold text-slate-900 truncate">
+              Current Game: {tttCatalog.name}
+            </p>
+            <p className="text-xs text-slate-500">
+              11 multiplayer games ready — Chess, Connect Four, Battleship, Checkers &amp; more
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSwitcher(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap shrink-0"
+        >
+          <LayoutGrid className="w-4 h-4" />
+          Switch Game
+        </button>
+      </div>
+
+      {arcadeInviteError && (
+        <div className="flex items-center justify-between gap-4 rounded-xl border-2 border-rose-300 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-800">
+          <span>{arcadeInviteError}</span>
+          <button
+            type="button"
+            onClick={() => setArcadeInviteError('')}
+            className="underline cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Primary Two-Column Lobby */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Focal Anchor: Create or Join Room */}

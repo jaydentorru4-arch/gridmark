@@ -182,6 +182,64 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidArcadeGameType(gameType) {
+      return gameType is string
+        && gameType in [
+          'chess', 'connect4', 'battleship', 'rps', 'checkers',
+          'wordguess', 'hangman', 'dotsboxes', 'crazyeights', 'reversi'
+        ];
+    }
+
+    function isValidArcadeRoom(data) {
+      return data.keys().hasAll([
+          'inviteCode', 'gameType', 'visibility', 'isPublicOpen', 'status', 'hostUid',
+          'player1Uid', 'player1Name', 'player1Avatar',
+          'player2Uid', 'player2Name', 'player2Avatar',
+          'participantUids', 'currentTurnUid', 'winnerUid', 'resultSummary',
+          'rematchRoomId', 'state', 'createdAt', 'updatedAt', 'finishedAt'
+        ])
+        && data.keys().hasOnly([
+          'inviteCode', 'gameType', 'visibility', 'isPublicOpen', 'status', 'hostUid',
+          'player1Uid', 'player1Name', 'player1Avatar',
+          'player2Uid', 'player2Name', 'player2Avatar',
+          'participantUids', 'currentTurnUid', 'winnerUid', 'resultSummary',
+          'rematchRoomId', 'state', 'createdAt', 'updatedAt', 'finishedAt'
+        ])
+        && isValidInviteCode(data.inviteCode)
+        && isValidArcadeGameType(data.gameType)
+        && (data.visibility == 'public' || data.visibility == 'private')
+        && data.isPublicOpen is bool
+        && data.status in ['waiting', 'playing', 'finished', 'abandoned']
+        && isValidId(data.hostUid)
+        && isValidId(data.player1Uid)
+        && data.player1Name is string && data.player1Name.size() >= 1 && data.player1Name.size() <= 40
+        && isValidAvatar(data.player1Avatar)
+        && data.player2Uid is string && data.player2Uid.size() <= 128
+        && data.player2Name is string && data.player2Name.size() <= 40
+        && data.player2Avatar is string && data.player2Avatar in ['', 'coral', 'cobalt', 'emerald', 'amber', 'slate', 'plum']
+        && data.participantUids is list
+        && data.participantUids.size() >= 1
+        && data.participantUids.size() <= 2
+        && data.participantUids[0] is string
+        && data.currentTurnUid is string && data.currentTurnUid.size() <= 128
+        && data.winnerUid is string && data.winnerUid.size() <= 128
+        && data.resultSummary is string && data.resultSummary.size() <= 140
+        && data.rematchRoomId is string && data.rematchRoomId.size() <= 128
+        && data.state is map
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && (data.finishedAt == null || data.finishedAt is timestamp);
+    }
+
+    function isValidArcadeCode(data) {
+      return data.keys().hasAll(['roomId', 'hostUid', 'gameType', 'createdAt'])
+        && data.keys().hasOnly(['roomId', 'hostUid', 'gameType', 'createdAt'])
+        && isValidId(data.roomId)
+        && isValidId(data.hostUid)
+        && isValidArcadeGameType(data.gameType)
+        && data.createdAt is timestamp;
+    }
+
     function isGameTransitionValidForPlayerStat(uid, gameId, inc, ext) {
       let preGame = get(/databases/$(database)/documents/games/$(gameId)).data;
       let postGame = getAfter(/databases/$(database)/documents/games/$(gameId)).data;
@@ -470,6 +528,126 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+    }
+
+    match /arcadeRooms/{roomId} {
+      allow get: if isSignedIn()
+        && isValidId(roomId)
+        && (request.auth.uid in existing().participantUids || existing().status == 'waiting');
+
+      allow list: if isSignedIn()
+        && (request.auth.uid in resource.data.participantUids || resource.data.isPublicOpen == true);
+
+      allow create: if isSignedIn()
+        && isValidId(roomId)
+        && isValidArcadeRoom(incoming())
+        && incoming().hostUid == request.auth.uid
+        && incoming().winnerUid == ''
+        && incoming().rematchRoomId == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().finishedAt == null
+        && (
+          (incoming().status == 'waiting'
+            && incoming().player1Uid == request.auth.uid
+            && incoming().player2Uid == ''
+            && incoming().player2Name == ''
+            && incoming().player2Avatar == ''
+            && incoming().participantUids.size() == 1
+            && incoming().participantUids[0] == request.auth.uid
+            && incoming().isPublicOpen == (incoming().visibility == 'public'))
+          ||
+          (incoming().status == 'playing'
+            && incoming().isPublicOpen == false
+            && isValidId(incoming().player1Uid)
+            && isValidId(incoming().player2Uid)
+            && incoming().player1Uid != incoming().player2Uid
+            && incoming().participantUids.size() == 2
+            && incoming().participantUids[0] == incoming().player1Uid
+            && incoming().participantUids[1] == incoming().player2Uid
+            && request.auth.uid in incoming().participantUids
+            && exists(/databases/$(database)/documents/players/$(incoming().player1Uid))
+            && exists(/databases/$(database)/documents/players/$(incoming().player2Uid)))
+        );
+
+      allow update: if isSignedIn()
+        && isValidId(roomId)
+        && isValidArcadeRoom(incoming())
+        && incoming().inviteCode == existing().inviteCode
+        && incoming().gameType == existing().gameType
+        && incoming().hostUid == existing().hostUid
+        && incoming().player1Uid == existing().player1Uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Guest joins waiting room
+          (existing().status == 'waiting'
+            && request.auth.uid != existing().player1Uid
+            && incoming().status == 'playing'
+            && incoming().isPublicOpen == false
+            && incoming().player2Uid == request.auth.uid
+            && incoming().player2Name.size() >= 1
+            && isValidAvatar(incoming().player2Avatar)
+            && incoming().participantUids.size() == 2
+            && incoming().participantUids[0] == existing().player1Uid
+            && incoming().participantUids[1] == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'player2Uid', 'player2Name', 'player2Avatar', 'participantUids',
+              'status', 'isPublicOpen', 'currentTurnUid', 'state', 'updatedAt'
+            ]))
+          ||
+          // Action 2: Participant commits game move or setup update
+          (existing().status == 'playing'
+            && request.auth.uid in existing().participantUids
+            && (
+              (incoming().status == 'playing'
+                && incoming().finishedAt == null
+                && incoming().winnerUid == '')
+              ||
+              (incoming().status == 'finished'
+                && incoming().finishedAt == request.time
+                && (incoming().winnerUid == 'draw' || incoming().winnerUid in existing().participantUids))
+            )
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'state', 'currentTurnUid', 'status', 'winnerUid', 'resultSummary', 'updatedAt', 'finishedAt'
+            ]))
+          ||
+          // Action 3: Host cancels waiting room
+          (existing().status == 'waiting'
+            && request.auth.uid == existing().hostUid
+            && incoming().status == 'abandoned'
+            && incoming().isPublicOpen == false
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'isPublicOpen', 'updatedAt'
+            ]))
+          ||
+          // Action 4: Link rematch room ID after finished (terminal outcome immutable)
+          (existing().status == 'finished'
+            && existing().rematchRoomId == ''
+            && request.auth.uid in existing().participantUids
+            && isValidId(incoming().rematchRoomId)
+            && incoming().status == existing().status
+            && incoming().winnerUid == existing().winnerUid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'rematchRoomId', 'updatedAt'
+            ]))
+        );
+
+      allow delete: if false;
+    }
+
+    match /arcadeCodes/{inviteCode} {
+      allow get: if isSignedIn() && isValidInviteCode(inviteCode);
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidInviteCode(inviteCode)
+        && isValidArcadeCode(incoming())
+        && incoming().hostUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && existsAfter(/databases/$(database)/documents/arcadeRooms/$(incoming().roomId));
+
+      allow update, delete: if false;
     }
   }
 }
