@@ -1,0 +1,475 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------
+    // Global Hardened Primitives
+    // ---------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidInviteCode(code) {
+      return code is string
+        && code.size() == 6
+        && code.matches('^[A-Z0-9]{6}$');
+    }
+
+    function isValidAvatar(avatar) {
+      return avatar is string
+        && avatar in ['coral', 'cobalt', 'emerald', 'amber', 'slate', 'plum'];
+    }
+
+    function isValidCell(cell) {
+      return cell is string && (cell == '' || cell == 'X' || cell == 'O');
+    }
+
+    // ---------------------------------------------------------
+    // Validation Blueprints
+    // ---------------------------------------------------------
+    function isValidPlayerProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'username', 'displayName', 'avatarId', 'bio', 'visibility',
+          'wins', 'losses', 'draws', 'gamesPlayed', 'points',
+          'winStreak', 'bestStreak', 'lastMatchId', 'isOnline',
+          'lastActiveAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'username', 'displayName', 'avatarId', 'bio', 'visibility',
+          'wins', 'losses', 'draws', 'gamesPlayed', 'points',
+          'winStreak', 'bestStreak', 'lastMatchId', 'isOnline',
+          'lastActiveAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.username is string
+        && data.username.size() >= 3
+        && data.username.size() <= 24
+        && data.username.matches('^[a-zA-Z0-9_]+$')
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 40
+        && isValidAvatar(data.avatarId)
+        && data.bio is string
+        && data.bio.size() <= 160
+        && data.visibility == 'public'
+        && data.wins is int && data.wins >= 0
+        && data.losses is int && data.losses >= 0
+        && data.draws is int && data.draws >= 0
+        && data.gamesPlayed is int && data.gamesPlayed >= 0
+        && data.gamesPlayed == data.wins + data.losses + data.draws
+        && data.points is int && data.points == data.wins * 3 + data.draws
+        && data.winStreak is int && data.winStreak >= 0
+        && data.bestStreak is int && data.bestStreak >= data.winStreak
+        && data.lastMatchId is string && data.lastMatchId.size() <= 128
+        && data.isOnline is bool
+        && data.lastActiveAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'soundEnabled', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'soundEnabled', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 254
+        && data.soundEnabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGameRoom(data) {
+      return data.keys().hasAll([
+          'inviteCode', 'visibility', 'isPublicOpen', 'status', 'hostUid',
+          'playerXUid', 'playerXName', 'playerXAvatar',
+          'playerOUid', 'playerOName', 'playerOAvatar',
+          'participantUids', 'board', 'currentTurn', 'moveCount',
+          'winner', 'winnerUid', 'winningLine', 'rematchGameId',
+          'createdAt', 'updatedAt', 'finishedAt'
+        ])
+        && data.keys().hasOnly([
+          'inviteCode', 'visibility', 'isPublicOpen', 'status', 'hostUid',
+          'playerXUid', 'playerXName', 'playerXAvatar',
+          'playerOUid', 'playerOName', 'playerOAvatar',
+          'participantUids', 'board', 'currentTurn', 'moveCount',
+          'winner', 'winnerUid', 'winningLine', 'rematchGameId',
+          'createdAt', 'updatedAt', 'finishedAt'
+        ])
+        && isValidInviteCode(data.inviteCode)
+        && (data.visibility == 'public' || data.visibility == 'private')
+        && data.isPublicOpen is bool
+        && data.status in ['waiting', 'playing', 'finished', 'abandoned']
+        && isValidId(data.hostUid)
+        && isValidId(data.playerXUid)
+        && data.playerXName is string && data.playerXName.size() >= 1 && data.playerXName.size() <= 40
+        && isValidAvatar(data.playerXAvatar)
+        && data.playerOUid is string && data.playerOUid.size() <= 128
+        && data.playerOName is string && data.playerOName.size() <= 40
+        && data.playerOAvatar is string && data.playerOAvatar in ['', 'coral', 'cobalt', 'emerald', 'amber', 'slate', 'plum']
+        && data.participantUids is list
+        && data.participantUids.size() >= 1
+        && data.participantUids.size() <= 2
+        && data.participantUids[0] is string
+        && data.board is list
+        && data.board.size() == 9
+        && isValidCell(data.board[0])
+        && isValidCell(data.board[1])
+        && isValidCell(data.board[2])
+        && isValidCell(data.board[3])
+        && isValidCell(data.board[4])
+        && isValidCell(data.board[5])
+        && isValidCell(data.board[6])
+        && isValidCell(data.board[7])
+        && isValidCell(data.board[8])
+        && (data.currentTurn == 'X' || data.currentTurn == 'O')
+        && data.moveCount is int && data.moveCount >= 0 && data.moveCount <= 9
+        && data.winner in ['', 'X', 'O', 'draw']
+        && data.winnerUid is string && data.winnerUid.size() <= 128
+        && data.winningLine is list && data.winningLine.size() <= 3
+        && (data.winningLine.size() == 0 || (data.winningLine.size() == 3 && data.winningLine[0] is int && data.winningLine[1] is int && data.winningLine[2] is int))
+        && data.rematchGameId is string && data.rematchGameId.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && (data.finishedAt == null || data.finishedAt is timestamp);
+    }
+
+    function isValidRoomCode(data) {
+      return data.keys().hasAll(['gameId', 'hostUid', 'createdAt'])
+        && data.keys().hasOnly(['gameId', 'hostUid', 'createdAt'])
+        && isValidId(data.gameId)
+        && isValidId(data.hostUid)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidChallenge(data) {
+      return data.keys().hasAll([
+          'challengerUid', 'challengerName', 'challengerAvatar',
+          'targetUid', 'targetName', 'status', 'gameId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'challengerUid', 'challengerName', 'challengerAvatar',
+          'targetUid', 'targetName', 'status', 'gameId', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.challengerUid)
+        && data.challengerName is string && data.challengerName.size() >= 1 && data.challengerName.size() <= 40
+        && isValidAvatar(data.challengerAvatar)
+        && isValidId(data.targetUid)
+        && data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 40
+        && data.status in ['pending', 'accepted', 'declined', 'cancelled']
+        && data.gameId is string && data.gameId.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isGameTransitionValidForPlayerStat(uid, gameId, inc, ext) {
+      let preGame = get(/databases/$(database)/documents/games/$(gameId)).data;
+      let postGame = getAfter(/databases/$(database)/documents/games/$(gameId)).data;
+      return preGame.status == 'playing'
+        && postGame.status == 'finished'
+        && request.auth.uid in preGame.participantUids
+        && uid in preGame.participantUids
+        && (
+          (postGame.winner == 'draw'
+            && inc.draws == ext.draws + 1
+            && inc.winStreak == 0
+            && inc.bestStreak == ext.bestStreak)
+          || (postGame.winner != 'draw'
+            && postGame.winnerUid == uid
+            && inc.wins == ext.wins + 1
+            && inc.winStreak == ext.winStreak + 1
+            && ((inc.winStreak > ext.bestStreak && inc.bestStreak == inc.winStreak)
+              || (inc.winStreak <= ext.bestStreak && inc.bestStreak == ext.bestStreak)))
+          || (postGame.winner != 'draw'
+            && postGame.winnerUid != uid
+            && inc.losses == ext.losses + 1
+            && inc.winStreak == 0
+            && inc.bestStreak == ext.bestStreak)
+        );
+    }
+
+    // ---------------------------------------------------------
+    // Collection Rules
+    // ---------------------------------------------------------
+    match /players/{uid} {
+      allow get: if isSignedIn() && isValidId(uid);
+      allow list: if isSignedIn() && resource.data.visibility == 'public';
+
+      allow create: if isSignedIn()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidPlayerProfile(incoming())
+        && incoming().uid == uid
+        && incoming().wins == 0
+        && incoming().losses == 0
+        && incoming().draws == 0
+        && incoming().gamesPlayed == 0
+        && incoming().points == 0
+        && incoming().winStreak == 0
+        && incoming().bestStreak == 0
+        && incoming().lastMatchId == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().lastActiveAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(uid)
+        && isValidPlayerProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().visibility == existing().visibility
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Owner updates profile or presence
+          (request.auth.uid == uid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'username', 'displayName', 'avatarId', 'bio', 'isOnline', 'lastActiveAt', 'updatedAt'
+            ]))
+          ||
+          // Action 2: Atomic match completion stat update linked to games/{lastMatchId}
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+              'wins', 'losses', 'draws', 'gamesPlayed', 'points',
+              'winStreak', 'bestStreak', 'lastMatchId', 'updatedAt'
+            ])
+            && isValidId(incoming().lastMatchId)
+            && incoming().lastMatchId != existing().lastMatchId
+            && incoming().gamesPlayed == existing().gamesPlayed + 1
+            && incoming().wins >= existing().wins && incoming().wins <= existing().wins + 1
+            && incoming().losses >= existing().losses && incoming().losses <= existing().losses + 1
+            && incoming().draws >= existing().draws && incoming().draws <= existing().draws + 1
+            && (incoming().wins - existing().wins) + (incoming().losses - existing().losses) + (incoming().draws - existing().draws) == 1
+            && isGameTransitionValidForPlayerStat(uid, incoming().lastMatchId, incoming(), existing()))
+        );
+
+      allow delete: if false;
+    }
+
+    match /privateUsers/{uid} {
+      allow get: if isSignedIn() && isValidId(uid) && request.auth.uid == uid;
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidPrivateUser(incoming())
+        && incoming().uid == uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(uid)
+        && request.auth.uid == uid
+        && isValidPrivateUser(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['soundEnabled', 'email', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    match /games/{gameId} {
+      allow get: if isSignedIn()
+        && isValidId(gameId)
+        && (request.auth.uid in existing().participantUids || existing().status == 'waiting');
+
+      allow list: if isSignedIn()
+        && (request.auth.uid in resource.data.participantUids || resource.data.isPublicOpen == true);
+
+      allow create: if isSignedIn()
+        && isValidId(gameId)
+        && isValidGameRoom(incoming())
+        && incoming().hostUid == request.auth.uid
+        && incoming().moveCount == 0
+        && incoming().winner == ''
+        && incoming().winnerUid == ''
+        && incoming().winningLine.size() == 0
+        && incoming().rematchGameId == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().finishedAt == null
+        && (
+          // Action: Host creates waiting room
+          (incoming().status == 'waiting'
+            && incoming().playerXUid == request.auth.uid
+            && incoming().playerOUid == ''
+            && incoming().playerOName == ''
+            && incoming().playerOAvatar == ''
+            && incoming().participantUids.size() == 1
+            && incoming().participantUids[0] == request.auth.uid
+            && incoming().isPublicOpen == (incoming().visibility == 'public'))
+          ||
+          // Action: Direct challenge accept or rematch creates active game
+          (incoming().status == 'playing'
+            && incoming().isPublicOpen == false
+            && isValidId(incoming().playerXUid)
+            && isValidId(incoming().playerOUid)
+            && incoming().playerXUid != incoming().playerOUid
+            && incoming().participantUids.size() == 2
+            && incoming().participantUids[0] == incoming().playerXUid
+            && incoming().participantUids[1] == incoming().playerOUid
+            && request.auth.uid in incoming().participantUids
+            && exists(/databases/$(database)/documents/players/$(incoming().playerXUid))
+            && exists(/databases/$(database)/documents/players/$(incoming().playerOUid)))
+        );
+
+      allow update: if isSignedIn()
+        && isValidId(gameId)
+        && isValidGameRoom(incoming())
+        && incoming().inviteCode == existing().inviteCode
+        && incoming().hostUid == existing().hostUid
+        && incoming().playerXUid == existing().playerXUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Guest joins waiting room
+          (existing().status == 'waiting'
+            && request.auth.uid != existing().playerXUid
+            && incoming().status == 'playing'
+            && incoming().isPublicOpen == false
+            && incoming().playerOUid == request.auth.uid
+            && incoming().playerOName.size() >= 1
+            && isValidAvatar(incoming().playerOAvatar)
+            && incoming().participantUids.size() == 2
+            && incoming().participantUids[0] == existing().playerXUid
+            && incoming().participantUids[1] == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'playerOUid', 'playerOName', 'playerOAvatar', 'participantUids', 'status', 'isPublicOpen', 'updatedAt'
+            ]))
+          ||
+          // Action 2: Active turn player makes a move
+          (existing().status == 'playing'
+            && ((existing().currentTurn == 'X' && request.auth.uid == existing().playerXUid)
+              || (existing().currentTurn == 'O' && request.auth.uid == existing().playerOUid))
+            && incoming().moveCount == existing().moveCount + 1
+            && (
+              (incoming().status == 'playing'
+                && incoming().finishedAt == null
+                && incoming().winner == ''
+                && incoming().winnerUid == ''
+                && incoming().winningLine.size() == 0
+                && ((existing().currentTurn == 'X' && incoming().currentTurn == 'O')
+                  || (existing().currentTurn == 'O' && incoming().currentTurn == 'X')))
+              ||
+              (incoming().status == 'finished'
+                && incoming().finishedAt == request.time
+                && ((incoming().winner == 'draw' && incoming().winnerUid == '' && incoming().winningLine.size() == 0)
+                  || (incoming().winner == 'X' && incoming().winnerUid == existing().playerXUid && incoming().winningLine.size() == 3)
+                  || (incoming().winner == 'O' && incoming().winnerUid == existing().playerOUid && incoming().winningLine.size() == 3)))
+            )
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'board', 'currentTurn', 'moveCount', 'status', 'winner', 'winnerUid', 'winningLine', 'updatedAt', 'finishedAt'
+            ]))
+          ||
+          // Action 3: Participant resigns active game
+          (existing().status == 'playing'
+            && request.auth.uid in existing().participantUids
+            && incoming().status == 'finished'
+            && incoming().finishedAt == request.time
+            && ((request.auth.uid == existing().playerXUid && incoming().winner == 'O' && incoming().winnerUid == existing().playerOUid)
+              || (request.auth.uid == existing().playerOUid && incoming().winner == 'X' && incoming().winnerUid == existing().playerXUid))
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'winner', 'winnerUid', 'updatedAt', 'finishedAt'
+            ]))
+          ||
+          // Action 4: Host cancels waiting room
+          (existing().status == 'waiting'
+            && request.auth.uid == existing().hostUid
+            && incoming().status == 'abandoned'
+            && incoming().isPublicOpen == false
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'isPublicOpen', 'updatedAt'
+            ]))
+          ||
+          // Action 5: Link rematch game ID after finished (terminal outcome immutable)
+          (existing().status == 'finished'
+            && existing().rematchGameId == ''
+            && request.auth.uid in existing().participantUids
+            && isValidId(incoming().rematchGameId)
+            && incoming().status == existing().status
+            && incoming().winner == existing().winner
+            && incoming().winnerUid == existing().winnerUid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'rematchGameId', 'updatedAt'
+            ]))
+        );
+
+      allow delete: if false;
+    }
+
+    match /roomCodes/{inviteCode} {
+      allow get: if isSignedIn() && isValidInviteCode(inviteCode);
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidInviteCode(inviteCode)
+        && isValidRoomCode(incoming())
+        && incoming().hostUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && existsAfter(/databases/$(database)/documents/games/$(incoming().gameId));
+
+      allow update, delete: if false;
+    }
+
+    match /challenges/{challengeId} {
+      allow get: if isSignedIn()
+        && isValidId(challengeId)
+        && (existing().challengerUid == request.auth.uid || existing().targetUid == request.auth.uid);
+
+      allow list: if isSignedIn()
+        && (resource.data.challengerUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && isValidId(challengeId)
+        && isValidChallenge(incoming())
+        && incoming().challengerUid == request.auth.uid
+        && incoming().targetUid != request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().gameId == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/players/$(incoming().targetUid));
+
+      allow update: if isSignedIn()
+        && isValidId(challengeId)
+        && isValidChallenge(incoming())
+        && existing().status == 'pending'
+        && incoming().challengerUid == existing().challengerUid
+        && incoming().targetUid == existing().targetUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (request.auth.uid == existing().targetUid
+            && ((incoming().status == 'accepted' && isValidId(incoming().gameId))
+              || (incoming().status == 'declined' && incoming().gameId == ''))
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'gameId', 'updatedAt']))
+          ||
+          (request.auth.uid == existing().challengerUid
+            && incoming().status == 'cancelled'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+
+      allow delete: if false;
+    }
+  }
+}

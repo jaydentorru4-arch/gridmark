@@ -1,0 +1,421 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Public player profile, presence, and competitive Tic-Tac-Toe statistics.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique-style handle chosen by the player.",
+          "minLength": 3,
+          "maxLength": 24,
+          "pattern": "^[a-zA-Z0-9_]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name shown in lobbies and matches.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "avatarId": {
+          "type": "string",
+          "description": "Selected geometric avatar badge identifier.",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short player tagline or bio.",
+          "minLength": 0,
+          "maxLength": 160
+        },
+        "visibility": {
+          "type": "string",
+          "description": "Public visibility marker for leaderboard queries.",
+          "enum": ["public"]
+        },
+        "wins": {
+          "type": "integer",
+          "description": "Total match wins."
+        },
+        "losses": {
+          "type": "integer",
+          "description": "Total match losses."
+        },
+        "draws": {
+          "type": "integer",
+          "description": "Total match draws."
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total completed matches."
+        },
+        "points": {
+          "type": "integer",
+          "description": "Leaderboard ranking points (3 per win, 1 per draw)."
+        },
+        "winStreak": {
+          "type": "integer",
+          "description": "Current consecutive win streak."
+        },
+        "bestStreak": {
+          "type": "integer",
+          "description": "Highest consecutive win streak achieved."
+        },
+        "lastMatchId": {
+          "type": "string",
+          "description": "Most recent game document ID applied to stats to prevent double-counting.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Whether the player is currently active in the lobby."
+        },
+        "lastActiveAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last presence heartbeat."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of account creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last profile or stats update."
+        }
+      },
+      "required": [
+        "uid",
+        "username",
+        "displayName",
+        "avatarId",
+        "bio",
+        "visibility",
+        "wins",
+        "losses",
+        "draws",
+        "gamesPlayed",
+        "points",
+        "winStreak",
+        "bestStreak",
+        "lastMatchId",
+        "isOnline",
+        "lastActiveAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateUser": {
+      "title": "PrivateUser",
+      "description": "Private user account PII and personal client preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Authenticated user email address.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "soundEnabled": {
+          "type": "boolean",
+          "description": "Web Audio sound effects preference."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": ["uid", "email", "soundEnabled", "createdAt", "updatedAt"]
+    },
+    "GameRoom": {
+      "title": "GameRoom",
+      "description": "Real-time multiplayer Tic-Tac-Toe match room and board state.",
+      "type": "object",
+      "properties": {
+        "inviteCode": {
+          "type": "string",
+          "description": "6-character alphanumeric room invite code.",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "visibility": {
+          "type": "string",
+          "description": "Whether the room is listed publicly or invite-only.",
+          "enum": ["public", "private"]
+        },
+        "isPublicOpen": {
+          "type": "boolean",
+          "description": "True only while visibility is public and status is waiting."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current lifecycle phase of the game room.",
+          "enum": ["waiting", "playing", "finished", "abandoned"]
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "UID of the room creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerXUid": {
+          "type": "string",
+          "description": "UID of player assigned mark X.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerXName": {
+          "type": "string",
+          "description": "Display name of player X.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "playerXAvatar": {
+          "type": "string",
+          "description": "Avatar identifier of player X.",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "playerOUid": {
+          "type": "string",
+          "description": "UID of player assigned mark O, or empty while waiting.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "playerOName": {
+          "type": "string",
+          "description": "Display name of player O, or empty while waiting.",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "playerOAvatar": {
+          "type": "string",
+          "description": "Avatar identifier of player O, or empty while waiting.",
+          "enum": ["", "coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "participantUids": {
+          "type": "array",
+          "description": "UIDs of players in this match (max 2)."
+        },
+        "board": {
+          "type": "array",
+          "description": "9-cell Tic-Tac-Toe board state ('', 'X', or 'O')."
+        },
+        "currentTurn": {
+          "type": "string",
+          "description": "Mark whose turn is active.",
+          "enum": ["X", "O"]
+        },
+        "moveCount": {
+          "type": "integer",
+          "description": "Total moves played (0 to 9)."
+        },
+        "winner": {
+          "type": "string",
+          "description": "Outcome of the match.",
+          "enum": ["", "X", "O", "draw"]
+        },
+        "winnerUid": {
+          "type": "string",
+          "description": "UID of the winning player, or empty on draw/in-progress.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "winningLine": {
+          "type": "array",
+          "description": "Indices (0-8) of the 3 winning cells, or empty array."
+        },
+        "rematchGameId": {
+          "type": "string",
+          "description": "ID of the linked rematch game room if created.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when room was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest move or status change."
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when match ended, or null while active."
+        }
+      },
+      "required": [
+        "inviteCode",
+        "visibility",
+        "isPublicOpen",
+        "status",
+        "hostUid",
+        "playerXUid",
+        "playerXName",
+        "playerXAvatar",
+        "playerOUid",
+        "playerOName",
+        "playerOAvatar",
+        "participantUids",
+        "board",
+        "currentTurn",
+        "moveCount",
+        "winner",
+        "winnerUid",
+        "winningLine",
+        "rematchGameId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RoomCode": {
+      "title": "RoomCode",
+      "description": "Direct O(1) lookup index mapping a 6-character invite code to a game room ID.",
+      "type": "object",
+      "properties": {
+        "gameId": {
+          "type": "string",
+          "description": "Associated game room document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "UID of the player who created the room.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when code was reserved."
+        }
+      },
+      "required": ["gameId", "hostUid", "createdAt"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Direct online match invitation sent from one player to another.",
+      "type": "object",
+      "properties": {
+        "challengerUid": {
+          "type": "string",
+          "description": "UID of the challenging player.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "challengerName": {
+          "type": "string",
+          "description": "Display name of the challenger.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "challengerAvatar": {
+          "type": "string",
+          "description": "Avatar identifier of the challenger.",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "targetUid": {
+          "type": "string",
+          "description": "UID of the challenged opponent.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "targetName": {
+          "type": "string",
+          "description": "Display name of the target opponent.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Challenge invitation status.",
+          "enum": ["pending", "accepted", "declined", "cancelled"]
+        },
+        "gameId": {
+          "type": "string",
+          "description": "Created game room ID once accepted.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when challenge was sent."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when challenge status changed."
+        }
+      },
+      "required": [
+        "challengerUid",
+        "challengerName",
+        "challengerAvatar",
+        "targetUid",
+        "targetName",
+        "status",
+        "gameId",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/players/{uid}": {
+      "schema": { "$ref": "#/entities/PlayerProfile" },
+      "description": "Public player profile and competitive leaderboard stats."
+    },
+    "/privateUsers/{uid}": {
+      "schema": { "$ref": "#/entities/PrivateUser" },
+      "description": "Owner-only PII (email) and personal sound preferences."
+    },
+    "/games/{gameId}": {
+      "schema": { "$ref": "#/entities/GameRoom" },
+      "description": "Multiplayer Tic-Tac-Toe rooms, active boards, and completed match records."
+    },
+    "/roomCodes/{inviteCode}": {
+      "schema": { "$ref": "#/entities/RoomCode" },
+      "description": "O(1) invite code to gameId lookup table."
+    },
+    "/challenges/{challengeId}": {
+      "schema": { "$ref": "#/entities/Challenge" },
+      "description": "Direct real-time player-to-player match challenges."
+    }
+  }
+}

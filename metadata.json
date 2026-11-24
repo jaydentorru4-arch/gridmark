@@ -1,0 +1,6 @@
+{
+  "name": "Gridmark",
+  "description": "Real-time online multiplayer Tic-Tac-Toe with invite code rooms, direct player challenges, match history, player statistics, and competitive leaderboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
