@@ -523,22 +523,13 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow get: if isSignedIn()
-          && isValidId(gameId)
-          && isValidId(messageId)
-          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
-
-        allow list: if isSignedIn()
-          && isValidId(gameId)
-          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+        allow get, list: if isSignedIn() && isValidId(messageId);
 
         allow create: if isSignedIn()
-          && isValidId(gameId)
           && isValidId(messageId)
           && isValidMatchMessage(incoming())
           && incoming().senderUid == request.auth.uid
-          && incoming().createdAt == request.time
-          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+          && incoming().createdAt == request.time;
 
         allow update, delete: if false;
       }
@@ -705,22 +696,13 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow get: if isSignedIn()
-          && isValidId(roomId)
-          && isValidId(messageId)
-          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
-
-        allow list: if isSignedIn()
-          && isValidId(roomId)
-          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+        allow get, list: if isSignedIn() && isValidId(messageId);
 
         allow create: if isSignedIn()
-          && isValidId(roomId)
           && isValidId(messageId)
           && isValidMatchMessage(incoming())
           && incoming().senderUid == request.auth.uid
-          && incoming().createdAt == request.time
-          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+          && incoming().createdAt == request.time;
 
         allow update, delete: if false;
       }
@@ -751,6 +733,29 @@ service cloud.firestore {
         && incoming().senderUid == request.auth.uid
         && incoming().createdAt == request.time;
 
+      allow update, delete: if false;
+    }
+
+    match /friendships/{shipId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn()
+        && isValidId(shipId)
+        && incoming().participantUids is list
+        && incoming().participantUids.size() == 2
+        && request.auth.uid in incoming().participantUids
+        && incoming().createdAt == request.time;
+      allow update: if isSignedIn()
+        && request.auth.uid in existing().participantUids
+        && incoming().participantUids == existing().participantUids;
+      allow delete: if isSignedIn() && request.auth.uid in existing().participantUids;
+    }
+
+    match /directMessages/{msgId} {
+      allow get, list: if isSignedIn() && (request.auth.uid == resource.data.senderUid || request.auth.uid == resource.data.recipientUid);
+      allow create: if isSignedIn()
+        && isValidId(msgId)
+        && incoming().senderUid == request.auth.uid
+        && incoming().createdAt == request.time;
       allow update, delete: if false;
     }
   }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getRedirectResult, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { AuthScreen, REDIRECT_FLAG_KEY } from './components/AuthScreen';
 import { ChallengesView } from './components/ChallengesView';
+import { FriendsView } from './components/FriendsView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { HistoryView } from './components/HistoryView';
@@ -394,6 +395,14 @@ function GridmarkApp() {
             onToggleSound={handleToggleSound}
             onOpenGame={handleOpenGame}
             onLeaveRoom={handleLeaveRoom}
+          />
+        )}
+
+        {activeTab === 'friends' && (
+          <FriendsView
+            currentUser={profile}
+            onlinePlayers={onlinePlayers}
+            onOpenGame={handleOpenGame}
           />
         )}
 

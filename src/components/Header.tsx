@@ -1,4 +1,4 @@
-import { Award, Clock, Gamepad2, Swords, User } from 'lucide-react';
+import { Award, Clock, Gamepad2, Swords, User, Users } from 'lucide-react';
 import type { NavTab, PlayerProfile } from '../types/game';
 
 interface HeaderProps {
@@ -16,6 +16,7 @@ export function Header({
 }: HeaderProps) {
   const navItems: { id: NavTab; label: string }[] = [
     { id: 'play', label: 'Play' },
+    { id: 'friends', label: 'Friends' },
     {
       id: 'challenges',
       label: pendingChallengesCount > 0 ? `Challenges (${pendingChallengesCount})` : 'Challenges',
@@ -81,13 +82,13 @@ export function Header({
 
       {/* Mobile bottom navigation bar (<= 15% mobile viewport height) */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFDF7] border-t-2 border-slate-900 grid grid-cols-5 h-14"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFDF7] border-t-2 border-slate-900 grid grid-cols-6 h-14"
         aria-label="Mobile navigation"
       >
         <button
           type="button"
           onClick={() => onSelectTab('play')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
             activeTab === 'play' ? 'text-blue-600' : 'text-slate-600'
           }`}
         >
@@ -96,20 +97,30 @@ export function Header({
         </button>
         <button
           type="button"
+          onClick={() => onSelectTab('friends')}
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
+            activeTab === 'friends' ? 'text-blue-600' : 'text-slate-600'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span className="whitespace-nowrap">Friends</span>
+        </button>
+        <button
+          type="button"
           onClick={() => onSelectTab('challenges')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
             activeTab === 'challenges' ? 'text-blue-600' : 'text-slate-600'
           }`}
         >
           <Swords className="w-4 h-4" />
           <span className="whitespace-nowrap">
-            {pendingChallengesCount > 0 ? `Duels (${pendingChallengesCount})` : 'Duels'}
+            {pendingChallengesCount > 0 ? `Duels(${pendingChallengesCount})` : 'Duels'}
           </span>
         </button>
         <button
           type="button"
           onClick={() => onSelectTab('leaderboard')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
             activeTab === 'leaderboard' ? 'text-blue-600' : 'text-slate-600'
           }`}
         >
@@ -119,7 +130,7 @@ export function Header({
         <button
           type="button"
           onClick={() => onSelectTab('history')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
             activeTab === 'history' ? 'text-blue-600' : 'text-slate-600'
           }`}
         >
@@ -129,7 +140,7 @@ export function Header({
         <button
           type="button"
           onClick={() => onSelectTab('profile')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium cursor-pointer ${
             activeTab === 'profile' ? 'text-blue-600' : 'text-slate-600'
           }`}
         >

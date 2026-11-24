@@ -136,4 +136,29 @@ export interface Challenge {
   updatedAt: Timestamp | null;
 }
 
-export type NavTab = 'play' | 'challenges' | 'leaderboard' | 'history' | 'profile';
+export interface Friendship {
+  id: string;
+  user1Uid: string;
+  user1Name: string;
+  user1Avatar: AvatarId;
+  user2Uid: string;
+  user2Name: string;
+  user2Avatar: AvatarId;
+  participantUids: string[];
+  status: 'accepted' | 'pending';
+  createdAt: Timestamp | null;
+  updatedAt: Timestamp | null;
+}
+
+export interface DirectMessage {
+  id: string;
+  senderUid: string;
+  senderName: string;
+  senderAvatar: AvatarId;
+  recipientUid: string;
+  text: string;
+  createdAt: Timestamp | null;
+}
+
+export type NavTab = 'play' | 'challenges' | 'friends' | 'leaderboard' | 'history' | 'profile';
+
