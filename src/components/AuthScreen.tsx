@@ -1,15 +1,16 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   createUserWithEmailAndPassword,
   reload,
   sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { Bot, Check, LogOut, Mail, RefreshCw, Users } from 'lucide-react';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, FIREBASE_PROJECT_ID, googleProvider } from '../lib/firebase';
 import { sanitizeUsername, validateProfileInput } from '../lib/gameLogic';
 import { soundFx } from '../lib/sound';
 import { registerPlayerProfile } from '../services/firestoreService';
@@ -22,6 +23,7 @@ interface AuthScreenProps {
   firebaseUser: FirebaseUser | null;
   needsProfileSetup: boolean;
   pendingInviteCode: string;
+  initialError?: string;
   onProfileCreated: () => void;
 }
 
@@ -29,12 +31,13 @@ export function AuthScreen({
   firebaseUser,
   needsProfileSetup,
   pendingInviteCode,
+  initialError = '',
   onProfileCreated,
 }: AuthScreenProps) {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState(initialError);
   const [infoMsg, setInfoMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -48,6 +51,27 @@ export function AuthScreen({
   const [soloBotOpen, setSoloBotOpen] = useState(false);
   const [localFriendOpen, setLocalFriendOpen] = useState(false);
   const [soloSoundEnabled, setSoloSoundEnabled] = useState(true);
+
+  const isStandaloneWindow = typeof window !== 'undefined' && window.self === window.top;
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  useEffect(() => {
+    if (initialError) {
+      setErrorMsg(initialError);
+    }
+  }, [initialError]);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    if (!displayName && firebaseUser.displayName) {
+      setDisplayName(firebaseUser.displayName);
+    }
+    if (username === 'player' && (firebaseUser.displayName || firebaseUser.email)) {
+      setUsername(
+        sanitizeUsername(firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'player'),
+      );
+    }
+  }, [firebaseUser?.uid, firebaseUser?.displayName, firebaseUser?.email]);
 
   if (localFriendOpen) {
     return (
@@ -83,6 +107,28 @@ export function AuthScreen({
     );
   }
 
+  const formatAuthError = (err: unknown): string => {
+    const code = (err as { code?: string })?.code || '';
+    const msg = err instanceof Error ? err.message : 'Authentication failed.';
+
+    if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+      return `This website domain (${currentHost}) is not yet added to Firebase Authorized Domains. Add "${currentHost}" in Firebase Console → Authentication → Settings → Authorized domains (project: ${FIREBASE_PROJECT_ID}).`;
+    }
+    if (code === 'auth/operation-not-allowed') {
+      return `Email/Password sign-in is not enabled in Firebase Console (project: ${FIREBASE_PROJECT_ID} → Authentication → Sign-in method). Use Continue with Google above, or enable Email/Password in Firebase Console.`;
+    }
+    if (code === 'auth/popup-blocked') {
+      return 'Browser blocked the sign-in popup. Allow popups for this site or use the redirect sign-in option below.';
+    }
+    if (code === 'auth/email-already-in-use') {
+      return 'An account with this email already exists. Switch to Sign In.';
+    }
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+      return 'Incorrect email or password.';
+    }
+    return msg;
+  };
+
   const handleGoogleAuth = async () => {
     setErrorMsg('');
     setInfoMsg('');
@@ -90,11 +136,35 @@ export function AuthScreen({
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
-      if (!msg.includes('popup-closed-by-user')) {
-        setErrorMsg(msg);
+      const code = (err as { code?: string })?.code || '';
+      if (
+        isStandaloneWindow &&
+        (code === 'auth/popup-blocked' ||
+          code === 'auth/operation-not-supported-in-this-environment' ||
+          code === 'auth/web-storage-unsupported')
+      ) {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          setErrorMsg(formatAuthError(redirectErr));
+        }
+      } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        setErrorMsg(formatAuthError(err));
       }
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGoogleRedirectAuth = async () => {
+    setErrorMsg('');
+    setInfoMsg('');
+    setBusy(true);
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      setErrorMsg(formatAuthError(err));
       setBusy(false);
     }
   };
@@ -117,18 +187,7 @@ export function AuthScreen({
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }
     } catch (err) {
-      const code = (err as { code?: string })?.code || '';
-      if (code === 'auth/operation-not-allowed') {
-        setErrorMsg(
-          'Email/Password sign-in is not yet enabled in Firebase Console (Authentication → Sign-in method). Use Continue with Google above for instant access, or enable Email/Password in Firebase Console.',
-        );
-      } else if (code === 'auth/email-already-in-use') {
-        setErrorMsg('An account with this email already exists. Switch to Sign In.');
-      } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
-        setErrorMsg('Incorrect email or password.');
-      } else {
-        setErrorMsg(err instanceof Error ? err.message : 'Authentication failed.');
-      }
+      setErrorMsg(formatAuthError(err));
     } finally {
       setBusy(false);
     }
@@ -143,6 +202,8 @@ export function AuthScreen({
       if (!auth.currentUser?.emailVerified) {
         setErrorMsg('Email is still unverified. Click the link in your inbox, then try again.');
       } else {
+        // Force-refresh ID token so Firestore security rules immediately see email_verified == true
+        await auth.currentUser.getIdToken(true);
         onProfileCreated();
       }
     } catch (err) {
@@ -445,7 +506,7 @@ export function AuthScreen({
             type="button"
             onClick={handleGoogleAuth}
             disabled={busy}
-            className="mt-6 w-full inline-flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors cursor-pointer"
+            className="mt-6 w-full inline-flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border-2 border-slate-900 bg-white text-slate-900 text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-amber-50 active:translate-y-[2px] active:shadow-none disabled:opacity-50 transition-all cursor-pointer"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -467,6 +528,17 @@ export function AuthScreen({
             </svg>
             Continue with Google
           </button>
+
+          {isStandaloneWindow && (
+            <button
+              type="button"
+              onClick={handleGoogleRedirectAuth}
+              disabled={busy}
+              className="mt-2.5 w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer"
+            >
+              Popup blocked? Sign in with Google redirect instead
+            </button>
+          )}
 
           <div className="my-6 flex items-center gap-3 text-xs text-slate-400">
             <span className="h-px flex-1 bg-slate-200" />

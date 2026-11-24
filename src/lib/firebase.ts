@@ -7,6 +7,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
+export const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId;
 
 export enum OperationType {
   CREATE = 'create',

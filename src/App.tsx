@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { AuthScreen } from './components/AuthScreen';
 import { ChallengesView } from './components/ChallengesView';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -37,6 +37,8 @@ function GridmarkApp() {
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [redirectAuthError, setRedirectAuthError] = useState('');
+  const [fatalFirestoreError, setFatalFirestoreError] = useState<Error | null>(null);
 
   const [activeTab, setActiveTab] = useState<NavTab>('play');
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
@@ -54,11 +56,19 @@ function GridmarkApp() {
 
   const knownPendingOutgoingRef = useRef<Set<string>>(new Set());
 
-  // 1. Auth state listener
+  // 1. Auth state listener & redirect completion
   useEffect(() => {
+    void getRedirectResult(auth).catch((err) => {
+      const msg = err instanceof Error ? err.message : 'Google redirect sign-in failed.';
+      if (!msg.includes('popup-closed-by-user')) {
+        setRedirectAuthError(msg);
+      }
+    });
+
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setAuthReady(true);
+      setFatalFirestoreError(null);
       if (!user) {
         setProfile(null);
         setProfileLoaded(false);
@@ -81,10 +91,14 @@ function GridmarkApp() {
     }
 
     setProfileLoaded(false);
-    const unsubProfile = subscribeToPlayerProfile(firebaseUser.uid, (data) => {
-      setProfile(data);
-      setProfileLoaded(true);
-    });
+    const unsubProfile = subscribeToPlayerProfile(
+      firebaseUser.uid,
+      (data) => {
+        setProfile(data);
+        setProfileLoaded(true);
+      },
+      setFatalFirestoreError,
+    );
 
     void getPrivateUser(firebaseUser.uid)
       .then((priv) => {
@@ -136,30 +150,38 @@ function GridmarkApp() {
     if (!profile) return;
     const uid = profile.uid;
 
-    const unsubPlayers = subscribeToPlayers(setPlayers);
-    const unsubOpen = subscribeToOpenRooms(setOpenRooms);
-    const unsubMyGames = subscribeToMyGames(uid, setMyGames);
-    const unsubIncoming = subscribeToIncomingChallenges(uid, setIncomingChallenges);
-    const unsubOutgoing = subscribeToOutgoingChallenges(uid, (items) => {
-      // Auto-enter room when a pending challenge we sent is accepted
-      for (const ch of items) {
-        if (
-          ch.status === 'accepted' &&
-          ch.gameId &&
-          knownPendingOutgoingRef.current.has(ch.id)
-        ) {
-          knownPendingOutgoingRef.current.delete(ch.id);
-          setActiveGameId(ch.gameId);
-          setActiveTab('play');
+    const unsubPlayers = subscribeToPlayers(setPlayers, setFatalFirestoreError);
+    const unsubOpen = subscribeToOpenRooms(setOpenRooms, setFatalFirestoreError);
+    const unsubMyGames = subscribeToMyGames(uid, setMyGames, setFatalFirestoreError);
+    const unsubIncoming = subscribeToIncomingChallenges(
+      uid,
+      setIncomingChallenges,
+      setFatalFirestoreError,
+    );
+    const unsubOutgoing = subscribeToOutgoingChallenges(
+      uid,
+      (items) => {
+        // Auto-enter room when a pending challenge we sent is accepted
+        for (const ch of items) {
+          if (
+            ch.status === 'accepted' &&
+            ch.gameId &&
+            knownPendingOutgoingRef.current.has(ch.id)
+          ) {
+            knownPendingOutgoingRef.current.delete(ch.id);
+            setActiveGameId(ch.gameId);
+            setActiveTab('play');
+          }
         }
-      }
-      const nextPending = new Set<string>();
-      for (const ch of items) {
-        if (ch.status === 'pending') nextPending.add(ch.id);
-      }
-      knownPendingOutgoingRef.current = nextPending;
-      setOutgoingChallenges(items);
-    });
+        const nextPending = new Set<string>();
+        for (const ch of items) {
+          if (ch.status === 'pending') nextPending.add(ch.id);
+        }
+        knownPendingOutgoingRef.current = nextPending;
+        setOutgoingChallenges(items);
+      },
+      setFatalFirestoreError,
+    );
 
     return () => {
       unsubPlayers();
@@ -177,12 +199,16 @@ function GridmarkApp() {
       return;
     }
 
-    const unsub = subscribeToGameRoom(activeGameId, (room) => {
-      setActiveRoom(room);
-      if (room?.inviteCode) {
-        syncRoomCodeToUrl(room.inviteCode);
-      }
-    });
+    const unsub = subscribeToGameRoom(
+      activeGameId,
+      (room) => {
+        setActiveRoom(room);
+        if (room?.inviteCode) {
+          syncRoomCodeToUrl(room.inviteCode);
+        }
+      },
+      setFatalFirestoreError,
+    );
     return () => unsub();
   }, [profile?.uid, activeGameId]);
 
@@ -258,6 +284,10 @@ function GridmarkApp() {
     [incomingChallenges],
   );
 
+  if (fatalFirestoreError) {
+    throw fatalFirestoreError;
+  }
+
   if (!authReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -273,6 +303,7 @@ function GridmarkApp() {
         firebaseUser={firebaseUser}
         needsProfileSetup={Boolean(firebaseUser && firebaseUser.emailVerified && profileLoaded && !profile)}
         pendingInviteCode={pendingInviteCode}
+        initialError={redirectAuthError}
         onProfileCreated={() => {
           setProfileLoaded(false);
         }}

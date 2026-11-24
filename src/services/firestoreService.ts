@@ -612,9 +612,27 @@ export async function cancelChallenge(challengeId: string): Promise<void> {
 // Real-time Subscriptions
 // ---------------------------------------------------------
 
+function forwardSnapshotError(
+  error: unknown,
+  operationType: OperationType,
+  path: string,
+  onError?: (err: Error) => void,
+): void {
+  try {
+    handleFirestoreError(error, operationType, path);
+  } catch (err) {
+    if (onError && err instanceof Error) {
+      onError(err);
+      return;
+    }
+    throw err;
+  }
+}
+
 export function subscribeToPlayerProfile(
   uid: string,
   onData: (profile: PlayerProfile | null) => void,
+  onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = `players/${uid}`;
   return onSnapshot(
@@ -622,11 +640,14 @@ export function subscribeToPlayerProfile(
     (snap) => {
       onData(snap.exists() ? (snap.data() as PlayerProfile) : null);
     },
-    (error) => handleFirestoreError(error, OperationType.GET, path),
+    (error) => forwardSnapshotError(error, OperationType.GET, path, onError),
   );
 }
 
-export function subscribeToPlayers(onData: (players: PlayerProfile[]) => void): Unsubscribe {
+export function subscribeToPlayers(
+  onData: (players: PlayerProfile[]) => void,
+  onError?: (err: Error) => void,
+): Unsubscribe {
   const path = 'players';
   const q = query(collection(db, 'players'), where('visibility', '==', 'public'), limit(150));
   return onSnapshot(
@@ -635,11 +656,14 @@ export function subscribeToPlayers(onData: (players: PlayerProfile[]) => void): 
       const list = snap.docs.map((d) => d.data() as PlayerProfile);
       onData(list);
     },
-    (error) => handleFirestoreError(error, OperationType.LIST, path),
+    (error) => forwardSnapshotError(error, OperationType.LIST, path, onError),
   );
 }
 
-export function subscribeToOpenRooms(onData: (rooms: GameRoom[]) => void): Unsubscribe {
+export function subscribeToOpenRooms(
+  onData: (rooms: GameRoom[]) => void,
+  onError?: (err: Error) => void,
+): Unsubscribe {
   const path = 'games';
   const q = query(collection(db, 'games'), where('isPublicOpen', '==', true), limit(40));
   return onSnapshot(
@@ -650,13 +674,14 @@ export function subscribeToOpenRooms(onData: (rooms: GameRoom[]) => void): Unsub
         .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
       onData(rooms);
     },
-    (error) => handleFirestoreError(error, OperationType.LIST, path),
+    (error) => forwardSnapshotError(error, OperationType.LIST, path, onError),
   );
 }
 
 export function subscribeToMyGames(
   uid: string,
   onData: (games: GameRoom[]) => void,
+  onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'games';
   const q = query(
@@ -672,13 +697,14 @@ export function subscribeToMyGames(
         .sort((a, b) => (b.updatedAt?.toMillis() ?? 0) - (a.updatedAt?.toMillis() ?? 0));
       onData(games);
     },
-    (error) => handleFirestoreError(error, OperationType.LIST, path),
+    (error) => forwardSnapshotError(error, OperationType.LIST, path, onError),
   );
 }
 
 export function subscribeToGameRoom(
   gameId: string,
   onData: (room: GameRoom | null) => void,
+  onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = `games/${gameId}`;
   return onSnapshot(
@@ -690,13 +716,14 @@ export function subscribeToGameRoom(
       }
       onData({ id: snap.id, ...(snap.data() as Omit<GameRoom, 'id'>) });
     },
-    (error) => handleFirestoreError(error, OperationType.GET, path),
+    (error) => forwardSnapshotError(error, OperationType.GET, path, onError),
   );
 }
 
 export function subscribeToIncomingChallenges(
   uid: string,
   onData: (challenges: Challenge[]) => void,
+  onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'challenges';
   const q = query(collection(db, 'challenges'), where('targetUid', '==', uid), limit(30));
@@ -708,13 +735,14 @@ export function subscribeToIncomingChallenges(
         .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
       onData(items);
     },
-    (error) => handleFirestoreError(error, OperationType.LIST, path),
+    (error) => forwardSnapshotError(error, OperationType.LIST, path, onError),
   );
 }
 
 export function subscribeToOutgoingChallenges(
   uid: string,
   onData: (challenges: Challenge[]) => void,
+  onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'challenges';
   const q = query(collection(db, 'challenges'), where('challengerUid', '==', uid), limit(30));
@@ -726,6 +754,6 @@ export function subscribeToOutgoingChallenges(
         .sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
       onData(items);
     },
-    (error) => handleFirestoreError(error, OperationType.LIST, path),
+    (error) => forwardSnapshotError(error, OperationType.LIST, path, onError),
   );
 }
