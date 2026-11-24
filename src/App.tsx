@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getRedirectResult, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { AuthScreen } from './components/AuthScreen';
+import { AuthScreen, REDIRECT_FLAG_KEY } from './components/AuthScreen';
 import { ChallengesView } from './components/ChallengesView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
@@ -36,9 +36,11 @@ function GridmarkApp() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [profileVersion, setProfileVersion] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [redirectAuthError, setRedirectAuthError] = useState('');
   const [fatalFirestoreError, setFatalFirestoreError] = useState<Error | null>(null);
+  const [syncWarning, setSyncWarning] = useState('');
 
   const [activeTab, setActiveTab] = useState<NavTab>('play');
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
@@ -56,19 +58,33 @@ function GridmarkApp() {
 
   const knownPendingOutgoingRef = useRef<Set<string>>(new Set());
 
-  // 1. Auth state listener & redirect completion
+  // 1. Auth state listener & redirect completion (standalone windows only)
   useEffect(() => {
-    void getRedirectResult(auth).catch((err) => {
-      const msg = err instanceof Error ? err.message : 'Google redirect sign-in failed.';
-      if (!msg.includes('popup-closed-by-user')) {
-        setRedirectAuthError(msg);
+    const isStandalone = typeof window !== 'undefined' && window.self === window.top;
+    let hadPendingRedirect = false;
+    try {
+      hadPendingRedirect = sessionStorage.getItem(REDIRECT_FLAG_KEY) === '1';
+      if (hadPendingRedirect) {
+        sessionStorage.removeItem(REDIRECT_FLAG_KEY);
       }
-    });
+    } catch {
+      // Ignore storage failures
+    }
+
+    if (isStandalone && hadPendingRedirect) {
+      void getRedirectResult(auth).catch((err) => {
+        const code = (err as { code?: string })?.code || '';
+        if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+          setRedirectAuthError(err instanceof Error ? err.message : 'Google redirect sign-in failed.');
+        }
+      });
+    }
 
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setAuthReady(true);
       setFatalFirestoreError(null);
+      setSyncWarning('');
       if (!user) {
         setProfile(null);
         setProfileLoaded(false);
@@ -114,7 +130,7 @@ function GridmarkApp() {
     return () => {
       unsubProfile();
     };
-  }, [authReady, firebaseUser]);
+  }, [authReady, firebaseUser, firebaseUser?.emailVerified, profileVersion]);
 
   // 3. Presence heartbeat while active in lobby/game
   useEffect(() => {
@@ -150,13 +166,22 @@ function GridmarkApp() {
     if (!profile) return;
     const uid = profile.uid;
 
-    const unsubPlayers = subscribeToPlayers(setPlayers, setFatalFirestoreError);
-    const unsubOpen = subscribeToOpenRooms(setOpenRooms, setFatalFirestoreError);
-    const unsubMyGames = subscribeToMyGames(uid, setMyGames, setFatalFirestoreError);
+    const handleListenerError = (err: Error) => {
+      try {
+        const parsed = JSON.parse(err.message) as { error?: string; path?: string };
+        setSyncWarning(parsed.error || 'Real-time sync encountered an issue.');
+      } catch {
+        setSyncWarning(err.message);
+      }
+    };
+
+    const unsubPlayers = subscribeToPlayers(setPlayers, handleListenerError);
+    const unsubOpen = subscribeToOpenRooms(setOpenRooms, handleListenerError);
+    const unsubMyGames = subscribeToMyGames(uid, setMyGames, handleListenerError);
     const unsubIncoming = subscribeToIncomingChallenges(
       uid,
       setIncomingChallenges,
-      setFatalFirestoreError,
+      handleListenerError,
     );
     const unsubOutgoing = subscribeToOutgoingChallenges(
       uid,
@@ -180,7 +205,7 @@ function GridmarkApp() {
         knownPendingOutgoingRef.current = nextPending;
         setOutgoingChallenges(items);
       },
-      setFatalFirestoreError,
+      handleListenerError,
     );
 
     return () => {
@@ -306,6 +331,7 @@ function GridmarkApp() {
         initialError={redirectAuthError}
         onProfileCreated={() => {
           setProfileLoaded(false);
+          setProfileVersion((v) => v + 1);
         }}
       />
     );
@@ -329,6 +355,19 @@ function GridmarkApp() {
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-8">
+        {syncWarning && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border-2 border-slate-900 bg-amber-50 px-4 py-3 text-sm font-medium text-slate-900">
+            <span>{syncWarning}</span>
+            <button
+              type="button"
+              onClick={() => setSyncWarning('')}
+              className="text-xs font-bold text-slate-700 hover:text-slate-950 cursor-pointer whitespace-nowrap"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {inviteJoinError && (
           <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             <span>{inviteJoinError}</span>
