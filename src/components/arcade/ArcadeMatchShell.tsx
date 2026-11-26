@@ -291,7 +291,7 @@ export function ArcadeMatchShell({
           roomCollection="arcadeRooms"
           roomId={roomId}
           currentUser={currentUser}
-          defaultExpanded={!isWaiting}
+          defaultExpanded={true}
         />
       )}
     </div>

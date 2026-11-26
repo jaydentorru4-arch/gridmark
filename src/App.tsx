@@ -115,7 +115,35 @@ function GridmarkApp() {
         setProfile(data);
         setProfileLoaded(true);
       },
-      setFatalFirestoreError,
+      (err) => {
+        const msg = err.message || '';
+        if (msg.includes('Quota exceeded') || msg.includes('resource-exhausted')) {
+          setSyncWarning('Firestore Daily Quota Exceeded. Free tier reads/writes are temporarily limited until tomorrow or until upgraded in Firebase Console.');
+          setProfile({
+            uid: firebaseUser.uid,
+            username: 'player',
+            displayName: firebaseUser.displayName || 'Player',
+            avatarId: 'slate',
+            bio: 'Quota exceeded fallback profile',
+            visibility: 'public',
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            gamesPlayed: 0,
+            points: 0,
+            winStreak: 0,
+            bestStreak: 0,
+            lastMatchId: '',
+            isOnline: true,
+            lastActiveAt: null,
+            createdAt: null,
+            updatedAt: null,
+          });
+          setProfileLoaded(true);
+        } else {
+          setFatalFirestoreError(err);
+        }
+      },
     );
 
     void getPrivateUser(firebaseUser.uid)
@@ -144,7 +172,7 @@ function GridmarkApp() {
       if (document.visibilityState === 'visible') {
         void updatePresence(uid, true);
       }
-    }, 45_000);
+    }, 90_000);
 
     const handleVisibility = () => {
       void updatePresence(uid, document.visibilityState === 'visible');

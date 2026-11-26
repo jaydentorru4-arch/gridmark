@@ -169,7 +169,7 @@ export function findKingIndex(board: ChessPiece[], color: ChessColor): number {
   return board.findIndex((p) => p === `${color}K`);
 }
 
-function isKingInCheck(board: ChessPiece[], color: ChessColor): boolean {
+export function isKingInCheck(board: ChessPiece[], color: ChessColor): boolean {
   const kIdx = findKingIndex(board, color);
   if (kIdx === -1) return false;
   return isSquareAttacked(board, kIdx, otherColor(color));
@@ -356,7 +356,7 @@ function generatePseudoMovesForSquare(
   return moves;
 }
 
-function applyRawMove(
+export function applyRawMove(
   board: ChessPiece[],
   move: ChessMoveOption,
   color: ChessColor,

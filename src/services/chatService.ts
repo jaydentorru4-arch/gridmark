@@ -51,7 +51,7 @@ export function subscribeToLoungeMessages(
   onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'loungeMessages';
-  const q = query(collection(db, 'loungeMessages'), where('channel', '==', 'chill'), limit(200));
+  const q = query(collection(db, 'loungeMessages'), where('channel', '==', 'chill'), limit(60));
 
   return onSnapshot(
     q,
@@ -128,7 +128,7 @@ export function subscribeToMatchMessages(
 ): Unsubscribe {
   const path = `${roomCollection}/${roomId}/messages`;
   // Query without orderBy to avoid any composite index requirement; sort client-side
-  const q = query(collection(db, roomCollection, roomId, 'messages'), limit(150));
+  const q = query(collection(db, roomCollection, roomId, 'messages'), limit(60));
 
   return onSnapshot(
     q,
@@ -215,15 +215,20 @@ export async function addFriendByUsername(
     }
   }
 
+  const u1 = currentUser.uid < targetPlayer.uid ? currentUser : targetPlayer;
+  const u2 = currentUser.uid < targetPlayer.uid ? targetPlayer : currentUser;
+  const u1Name = (u1.displayName || u1.username || 'Player').slice(0, 40);
+  const u2Name = (u2.displayName || u2.username || 'Player').slice(0, 40);
+
   try {
     await setDoc(shipRef, {
-      user1Uid: currentUser.uid < targetPlayer.uid ? currentUser.uid : targetPlayer.uid,
-      user1Name: currentUser.uid < targetPlayer.uid ? currentUser.displayName : targetPlayer.displayName,
-      user1Avatar: currentUser.uid < targetPlayer.uid ? currentUser.avatarId : targetPlayer.avatarId,
-      user2Uid: currentUser.uid < targetPlayer.uid ? targetPlayer.uid : currentUser.uid,
-      user2Name: currentUser.uid < targetPlayer.uid ? targetPlayer.displayName : currentUser.displayName,
-      user2Avatar: currentUser.uid < targetPlayer.uid ? targetPlayer.avatarId : targetPlayer.avatarId,
-      participantUids: [currentUser.uid, targetPlayer.uid],
+      user1Uid: u1.uid,
+      user1Name: u1Name,
+      user1Avatar: u1.avatarId,
+      user2Uid: u2.uid,
+      user2Name: u2Name,
+      user2Avatar: u2.avatarId,
+      participantUids: [uid1, uid2],
       status: 'accepted',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -285,9 +290,10 @@ export async function sendDirectMessage(
   try {
     await addDoc(collection(db, 'directMessages'), {
       senderUid: sender.uid,
-      senderName: sender.displayName,
+      senderName: (sender.displayName || sender.username || 'Player').slice(0, 40),
       senderAvatar: sender.avatarId,
       recipientUid,
+      participantUids: [sender.uid, recipientUid],
       text,
       createdAt: serverTimestamp(),
     });
@@ -303,7 +309,11 @@ export function subscribeToDirectMessages(
   onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'directMessages';
-  const q = query(collection(db, 'directMessages'), limit(200));
+  const q = query(
+    collection(db, 'directMessages'),
+    where('participantUids', 'array-contains', myUid),
+    limit(80),
+  );
 
   return onSnapshot(
     q,

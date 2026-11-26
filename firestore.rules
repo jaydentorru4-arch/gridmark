@@ -286,6 +286,57 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidFriendship(data) {
+      return data.keys().hasAll([
+          'user1Uid', 'user1Name', 'user1Avatar',
+          'user2Uid', 'user2Name', 'user2Avatar',
+          'participantUids', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'user1Uid', 'user1Name', 'user1Avatar',
+          'user2Uid', 'user2Name', 'user2Avatar',
+          'participantUids', 'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.user1Uid)
+        && data.user1Name is string && data.user1Name.size() >= 1 && data.user1Name.size() <= 40
+        && isValidAvatar(data.user1Avatar)
+        && isValidId(data.user2Uid)
+        && data.user1Uid != data.user2Uid
+        && data.user2Name is string && data.user2Name.size() >= 1 && data.user2Name.size() <= 40
+        && isValidAvatar(data.user2Avatar)
+        && data.participantUids is list
+        && data.participantUids.size() == 2
+        && data.participantUids[0] is string
+        && data.participantUids[1] is string
+        && data.user1Uid in data.participantUids
+        && data.user2Uid in data.participantUids
+        && data.status in ['accepted', 'pending']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDirectMessage(data) {
+      return data.keys().hasAll([
+          'senderUid', 'senderName', 'senderAvatar', 'recipientUid', 'participantUids', 'text', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'senderUid', 'senderName', 'senderAvatar', 'recipientUid', 'participantUids', 'text', 'createdAt'
+        ])
+        && isValidId(data.senderUid)
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 40
+        && isValidAvatar(data.senderAvatar)
+        && isValidId(data.recipientUid)
+        && data.senderUid != data.recipientUid
+        && data.participantUids is list
+        && data.participantUids.size() == 2
+        && data.participantUids[0] is string
+        && data.participantUids[1] is string
+        && data.senderUid in data.participantUids
+        && data.recipientUid in data.participantUids
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 280
+        && data.createdAt is timestamp;
+    }
+
     function isGameTransitionValidForPlayerStat(uid, gameId, inc, ext) {
       let preGame = get(/databases/$(database)/documents/games/$(gameId)).data;
       let postGame = getAfter(/databases/$(database)/documents/games/$(gameId)).data;
@@ -523,13 +574,22 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow get, list: if isSignedIn() && isValidId(messageId);
+        allow get: if isSignedIn()
+          && isValidId(gameId)
+          && isValidId(messageId)
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
+
+        allow list: if isSignedIn()
+          && isValidId(gameId)
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
 
         allow create: if isSignedIn()
+          && isValidId(gameId)
           && isValidId(messageId)
           && isValidMatchMessage(incoming())
           && incoming().senderUid == request.auth.uid
-          && incoming().createdAt == request.time;
+          && incoming().createdAt == request.time
+          && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.participantUids;
 
         allow update, delete: if false;
       }
@@ -696,13 +756,22 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow get, list: if isSignedIn() && isValidId(messageId);
+        allow get: if isSignedIn()
+          && isValidId(roomId)
+          && isValidId(messageId)
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
+
+        allow list: if isSignedIn()
+          && isValidId(roomId)
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
 
         allow create: if isSignedIn()
+          && isValidId(roomId)
           && isValidId(messageId)
           && isValidMatchMessage(incoming())
           && incoming().senderUid == request.auth.uid
-          && incoming().createdAt == request.time;
+          && incoming().createdAt == request.time
+          && request.auth.uid in get(/databases/$(database)/documents/arcadeRooms/$(roomId)).data.participantUids;
 
         allow update, delete: if false;
       }
@@ -737,25 +806,53 @@ service cloud.firestore {
     }
 
     match /friendships/{shipId} {
-      allow get, list: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow get: if isSignedIn()
+        && isValidId(shipId)
+        && request.auth.uid in existing().participantUids;
+
+      allow list: if isSignedIn()
+        && request.auth.uid in resource.data.participantUids;
+
       allow create: if isSignedIn()
         && isValidId(shipId)
-        && incoming().participantUids is list
-        && incoming().participantUids.size() == 2
+        && isValidFriendship(incoming())
         && request.auth.uid in incoming().participantUids
-        && incoming().createdAt == request.time;
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/players/$(incoming().user1Uid))
+        && exists(/databases/$(database)/documents/players/$(incoming().user2Uid));
+
       allow update: if isSignedIn()
+        && isValidId(shipId)
+        && isValidFriendship(incoming())
         && request.auth.uid in existing().participantUids
-        && incoming().participantUids == existing().participantUids;
-      allow delete: if isSignedIn() && request.auth.uid in existing().participantUids;
+        && incoming().user1Uid == existing().user1Uid
+        && incoming().user2Uid == existing().user2Uid
+        && incoming().participantUids == existing().participantUids
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if isSignedIn()
+        && isValidId(shipId)
+        && request.auth.uid in existing().participantUids;
     }
 
     match /directMessages/{msgId} {
-      allow get, list: if isSignedIn() && (request.auth.uid == resource.data.senderUid || request.auth.uid == resource.data.recipientUid);
+      allow get: if isSignedIn()
+        && isValidId(msgId)
+        && request.auth.uid in existing().participantUids;
+
+      allow list: if isSignedIn()
+        && request.auth.uid in resource.data.participantUids;
+
       allow create: if isSignedIn()
         && isValidId(msgId)
+        && isValidDirectMessage(incoming())
         && incoming().senderUid == request.auth.uid
-        && incoming().createdAt == request.time;
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/players/$(incoming().recipientUid));
+
       allow update, delete: if false;
     }
   }

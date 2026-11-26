@@ -117,6 +117,8 @@ interface ArcadeWorkspaceProps {
   myActiveRooms: ArcadeRoom[];
   activeRoomId: string | null;
   soundEnabled: boolean;
+  isGuest?: boolean;
+  onRequestSignIn?: () => void;
   onToggleSound: () => void;
   onSelectRoom: (roomId: string | null) => void;
   onOpenSwitcher: () => void;
@@ -435,6 +437,8 @@ export function ArcadeWorkspace({
   myActiveRooms,
   activeRoomId,
   soundEnabled,
+  isGuest = false,
+  onRequestSignIn,
   onToggleSound,
   onSelectRoom,
   onOpenSwitcher,
@@ -475,10 +479,10 @@ export function ArcadeWorkspace({
     setBotThinking(true);
     const delayMs =
       gameType === 'battleship' && (botSession.state as unknown as BattleshipState).phase === 'setup'
-        ? 180
+        ? 140
         : gameType === 'hangman' && (botSession.state as unknown as HangmanState).phase === 'setup'
-          ? 180
-          : 500;
+          ? 140
+          : 220;
 
     const timer = window.setTimeout(() => {
       const step = executeBotStep(
@@ -512,7 +516,7 @@ export function ArcadeWorkspace({
     }, delayMs);
 
     return () => window.clearTimeout(timer);
-  }, [botSession, gameType, currentUser]);
+  }, [botSession, gameType, currentUser.uid, currentUser.displayName, currentUser.avatarId]);
 
   // Real-time subscription to active online room
   useEffect(() => {
@@ -894,6 +898,8 @@ export function ArcadeWorkspace({
       currentUser={currentUser}
       openRooms={openRooms}
       myActiveRooms={myActiveRooms}
+      isGuest={isGuest}
+      onRequestSignIn={onRequestSignIn}
       onOpenRoom={(roomId) => onSelectRoom(roomId)}
       onStartLocal={handleStartLocal}
       onStartBot={handleStartBot}

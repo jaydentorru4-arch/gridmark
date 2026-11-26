@@ -660,7 +660,7 @@ export function subscribeToPlayers(
   onError?: (err: Error) => void,
 ): Unsubscribe {
   const path = 'players';
-  const q = query(collection(db, 'players'), where('visibility', '==', 'public'), limit(150));
+  const q = query(collection(db, 'players'), where('visibility', '==', 'public'), limit(80));
   return onSnapshot(
     q,
     (snap) => {

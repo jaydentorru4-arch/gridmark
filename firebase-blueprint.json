@@ -666,6 +666,121 @@
         }
       },
       "required": ["senderUid", "senderName", "senderAvatar", "senderEmblem", "text", "createdAt"]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Bidirectional friend connection between two players.",
+      "type": "object",
+      "properties": {
+        "user1Uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "user1Name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "user1Avatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "user2Uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "user2Name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "user2Avatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "participantUids": {
+          "type": "array",
+          "description": "Two participant UIDs sorted or paired for membership queries."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "pending"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "user1Uid",
+        "user1Name",
+        "user1Avatar",
+        "user2Uid",
+        "user2Name",
+        "user2Avatar",
+        "participantUids",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "Private 1-to-1 direct message between two friends.",
+      "type": "object",
+      "properties": {
+        "senderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "senderAvatar": {
+          "type": "string",
+          "enum": ["coral", "cobalt", "emerald", "amber", "slate", "plum"]
+        },
+        "recipientUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "participantUids": {
+          "type": "array",
+          "description": "Two-element list [senderUid, recipientUid] for scoped security queries."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "senderUid",
+        "senderName",
+        "senderAvatar",
+        "recipientUid",
+        "participantUids",
+        "text",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -708,6 +823,14 @@
     "/loungeMessages/{messageId}": {
       "schema": { "$ref": "#/entities/LoungeMessage" },
       "description": "Public chill chat messages visible to signed-in players."
+    },
+    "/friendships/{shipId}": {
+      "schema": { "$ref": "#/entities/Friendship" },
+      "description": "Accepted/pending friend pairs between signed-in players."
+    },
+    "/directMessages/{msgId}": {
+      "schema": { "$ref": "#/entities/DirectMessage" },
+      "description": "Direct chat messages scoped to sender and recipient."
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Bot, LayoutGrid, Plus, Users } from 'lucide-react';
+import { ArrowRight, Bot, LayoutGrid, Lock, LogIn, Plus, Users } from 'lucide-react';
 import { getCatalogEntry } from '../../data/arcadeCatalog';
 import type { BotDifficulty } from '../../lib/botAi';
 import { formatRelativeTime, normalizeInviteCode } from '../../lib/gameLogic';
@@ -18,6 +18,8 @@ interface ArcadeLobbyProps {
   currentUser: PlayerProfile;
   openRooms: ArcadeRoom[];
   myActiveRooms: ArcadeRoom[];
+  isGuest?: boolean;
+  onRequestSignIn?: () => void;
   onOpenRoom: (roomId: string) => void;
   onStartLocal: (p1Name: string, p2Name: string) => void;
   onStartBot: (difficulty: BotDifficulty) => void;
@@ -29,6 +31,8 @@ export function ArcadeLobby({
   currentUser,
   openRooms,
   myActiveRooms,
+  isGuest = false,
+  onRequestSignIn,
   onOpenRoom,
   onStartLocal,
   onStartBot,
@@ -125,7 +129,35 @@ export function ArcadeLobby({
         </button>
       </div>
 
-      {/* Main Online Lobby Grid */}
+      {/* Main Online Lobby Grid (or Sign-In Lock for Guests) */}
+      {isGuest ? (
+        <div className="bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A] flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl border-2 border-slate-900 bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-display text-lg font-bold text-slate-900">
+                Online {catalog.name} Requires Sign-In
+              </h2>
+              <p className="mt-1 text-sm text-slate-600 max-w-2xl">
+                To play against real people online, create invite rooms, or chat in matches, sign in with Google. You can play {catalog.name} offline in Pass &amp; Play or Solo vs Bot below right now!
+              </p>
+            </div>
+          </div>
+
+          {onRequestSignIn && (
+            <button
+              type="button"
+              onClick={onRequestSignIn}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-xs font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign in with Google
+            </button>
+          )}
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left: Create or Join */}
         <div className="lg:col-span-5 bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between">
@@ -323,6 +355,7 @@ export function ArcadeLobby({
           )}
         </div>
       </div>
+      )}
 
       {/* Offline Modes: Pass & Play + Solo Practice vs Bot */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">

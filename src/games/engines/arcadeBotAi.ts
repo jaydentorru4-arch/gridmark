@@ -10,8 +10,11 @@ import {
   type CheckersState,
 } from './checkersEngine';
 import {
-  executeChessMove,
+  applyRawMove,
   getAllLegalMoves,
+  isKingInCheck,
+  type ChessColor,
+  type ChessMoveOption,
   type ChessPiece,
   type ChessState,
   type PromoKind,
@@ -52,7 +55,7 @@ function pickRandom<T>(items: T[]): T {
 }
 
 // =========================================================
-// 1. CHESS BOT AI
+// 1. CHESS BOT AI (Fast Lightweight Search — Zero Frame Lag)
 // =========================================================
 const CHESS_VALUES: Record<string, number> = {
   P: 100,
@@ -63,14 +66,10 @@ const CHESS_VALUES: Record<string, number> = {
   K: 20000,
 };
 
-function evaluateChessBoard(state: ChessState, botColor: 'w' | 'b'): number {
-  if (state.outcome === botColor) return 100000;
-  if (state.outcome !== '' && state.outcome !== 'draw') return -100000;
-  if (state.outcome === 'draw') return 0;
-
+function evaluateRawChessBoard(board: ChessPiece[], botColor: ChessColor, enemyInCheck: boolean, botInCheck: boolean): number {
   let score = 0;
   for (let i = 0; i < 64; i++) {
-    const p: ChessPiece = state.board[i];
+    const p = board[i];
     if (!p) continue;
     const color = p[0];
     const kind = p[1];
@@ -78,12 +77,27 @@ function evaluateChessBoard(state: ChessState, botColor: 'w' | 'b'): number {
     const r = Math.floor(i / 8);
     const c = i % 8;
     const centerBonus = (3.5 - Math.abs(3.5 - r)) * 4 + (3.5 - Math.abs(3.5 - c)) * 5;
-    const total = val + (kind !== 'K' ? centerBonus : 0);
+    // Slight pawn advancement bonus
+    const advBonus =
+      kind === 'P' ? (color === 'w' ? (6 - r) * 6 : (r - 1) * 6) : 0;
+    const total = val + (kind !== 'K' ? centerBonus + advBonus : 0);
     score += color === botColor ? total : -total;
   }
-  if (state.inCheck && state.inCheck !== botColor) score += 45;
-  if (state.inCheck === botColor) score -= 45;
+  if (enemyInCheck) score += 45;
+  if (botInCheck) score -= 45;
   return score;
+}
+
+function scoreMoveOrdering(board: ChessPiece[], m: ChessMoveOption): number {
+  const target = board[m.to];
+  let s = 0;
+  if (target) {
+    const mover = board[m.from];
+    s += (CHESS_VALUES[target[1]] || 0) * 10 - (mover ? CHESS_VALUES[mover[1]] || 0 : 0);
+  }
+  if (m.isPromotion) s += 800;
+  if (m.isCastle) s += 60;
+  return s;
 }
 
 export function chooseChessBotMove(
@@ -91,6 +105,7 @@ export function chooseChessBotMove(
   difficulty: BotDifficulty,
 ): { from: number; to: number; promo: PromoKind } | null {
   const botColor = state.turn;
+  const enemyColor: ChessColor = botColor === 'w' ? 'b' : 'w';
   const moves = getAllLegalMoves(state, botColor);
   if (moves.length === 0) return null;
 
@@ -100,31 +115,44 @@ export function chooseChessBotMove(
     return { from: chosen.from, to: chosen.to, promo: 'Q' };
   }
 
+  // Sort candidate moves (MVV-LVA captures/promotions first for fast alpha-beta cutoffs)
+  const ordered = [...moves].sort((a, b) => scoreMoveOrdering(state.board, b) - scoreMoveOrdering(state.board, a));
+  const candidates = difficulty === 'unbeatable' ? ordered.slice(0, 18) : ordered;
+
   let bestScore = -Infinity;
-  let bestMoves: typeof moves = [];
+  let bestMoves: ChessMoveOption[] = [];
 
-  // Limit candidate sorting on deeper search
-  for (const move of moves) {
-    const promo: PromoKind = move.isPromotion ? 'Q' : 'Q';
-    const next = executeChessMove(state, move.from, move.to, promo);
+  for (const move of candidates) {
+    const { nextBoard } = applyRawMove(state.board, move, botColor, 'Q');
+    const enemyCheck = isKingInCheck(nextBoard, enemyColor);
+    let score = evaluateRawChessBoard(nextBoard, botColor, enemyCheck, false);
 
-    let score = evaluateChessBoard(next, botColor);
-    if (difficulty === 'unbeatable' && next.outcome === '') {
-      const replies = getAllLegalMoves(next, next.turn);
-      // Evaluate worst opponent reply (sampled/all up to 35 for speed)
-      const prioritized = replies.sort((a, b) => {
-        const capA = next.board[a.to] !== '' ? 1 : 0;
-        const capB = next.board[b.to] !== '' ? 1 : 0;
-        return capB - capA;
-      }).slice(0, 28);
+    if (difficulty === 'unbeatable') {
+      const nextState: ChessState = {
+        ...state,
+        board: nextBoard,
+        turn: enemyColor,
+        epTarget: -1,
+      };
+      const replies = getAllLegalMoves(nextState, enemyColor);
+      if (replies.length === 0) {
+        // Immediate checkmate or stalemate
+        score = enemyCheck ? 100000 : 0;
+      } else {
+        const orderedReplies = [...replies]
+          .sort((a, b) => scoreMoveOrdering(nextBoard, b) - scoreMoveOrdering(nextBoard, a))
+          .slice(0, 14);
 
-      let worstReply = Infinity;
-      for (const reply of prioritized) {
-        const afterReply = executeChessMove(next, reply.from, reply.to, 'Q');
-        const repScore = evaluateChessBoard(afterReply, botColor);
-        if (repScore < worstReply) worstReply = repScore;
+        let worstReply = Infinity;
+        for (const reply of orderedReplies) {
+          const { nextBoard: afterReplyBoard } = applyRawMove(nextBoard, reply, enemyColor, 'Q');
+          const botCheck = isKingInCheck(afterReplyBoard, botColor);
+          const repScore = evaluateRawChessBoard(afterReplyBoard, botColor, false, botCheck);
+          if (repScore < worstReply) worstReply = repScore;
+          if (worstReply <= bestScore) break; // Alpha-beta cutoff!
+        }
+        score = worstReply;
       }
-      if (prioritized.length > 0) score = worstReply;
     }
 
     if (score > bestScore) {

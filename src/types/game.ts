@@ -156,6 +156,7 @@ export interface DirectMessage {
   senderName: string;
   senderAvatar: AvatarId;
   recipientUid: string;
+  participantUids?: string[];
   text: string;
   createdAt: Timestamp | null;
 }

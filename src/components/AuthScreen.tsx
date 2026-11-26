@@ -7,15 +7,13 @@ import {
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { Bot, Check, LogOut, Mail, RefreshCw, Users } from 'lucide-react';
+import { Check, Gamepad2, LogOut, Mail, RefreshCw } from 'lucide-react';
 import { auth, FIREBASE_PROJECT_ID, googleProvider } from '../lib/firebase';
 import { sanitizeUsername, validateProfileInput } from '../lib/gameLogic';
-import { soundFx } from '../lib/sound';
 import { registerPlayerProfile } from '../services/firestoreService';
 import { AVATAR_IDS, BIO_MAX, DISPLAY_NAME_MAX, USERNAME_MAX, type AvatarId } from '../types/game';
 import { AVATAR_STYLES } from './AvatarBadge';
-import { BotGameBoard } from './BotGameBoard';
-import { LocalGameBoard } from './LocalGameBoard';
+import { GuestArcadeView } from './GuestArcadeView';
 
 export const REDIRECT_FLAG_KEY = 'gridmark_pending_redirect';
 
@@ -73,9 +71,7 @@ export function AuthScreen({
   );
   const [avatarId, setAvatarId] = useState<AvatarId>('cobalt');
   const [bio, setBio] = useState('');
-  const [soloBotOpen, setSoloBotOpen] = useState(false);
-  const [localFriendOpen, setLocalFriendOpen] = useState(false);
-  const [soloSoundEnabled, setSoloSoundEnabled] = useState(true);
+  const [guestArcadeOpen, setGuestArcadeOpen] = useState(false);
 
   const isStandaloneWindow = typeof window !== 'undefined' && window.self === window.top;
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
@@ -98,37 +94,17 @@ export function AuthScreen({
     }
   }, [firebaseUser?.uid, firebaseUser?.displayName, firebaseUser?.email]);
 
-  if (localFriendOpen) {
+  if (guestArcadeOpen && !firebaseUser) {
     return (
-      <div className="min-h-screen py-8 px-4 sm:px-6">
-        <LocalGameBoard
-          soundEnabled={soloSoundEnabled}
-          onToggleSound={() => {
-            const next = !soloSoundEnabled;
-            setSoloSoundEnabled(next);
-            soundFx.setEnabled(next);
-          }}
-          onBack={() => setLocalFriendOpen(false)}
-        />
-      </div>
-    );
-  }
-
-  if (soloBotOpen) {
-    return (
-      <div className="min-h-screen py-8 px-4 sm:px-6">
-        <BotGameBoard
-          playerName="Guest Player"
-          playerAvatar="cobalt"
-          soundEnabled={soloSoundEnabled}
-          onToggleSound={() => {
-            const next = !soloSoundEnabled;
-            setSoloSoundEnabled(next);
-            soundFx.setEnabled(next);
-          }}
-          onBack={() => setSoloBotOpen(false)}
-        />
-      </div>
+      <GuestArcadeView
+        initialShowSwitcher={true}
+        authBusy={busy}
+        onSignIn={() => {
+          setGuestArcadeOpen(false);
+          void handleGoogleAuth();
+        }}
+        onBackToSignIn={() => setGuestArcadeOpen(false)}
+      />
     );
   }
 
@@ -543,25 +519,20 @@ export function AuthScreen({
           </div>
 
           <div className="mt-8 pt-6 border-t-2 border-slate-100 space-y-3">
-            <p className="text-xs font-bold text-slate-700">Or play right now without signing in</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => setLocalFriendOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border-2 border-slate-900 bg-rose-500 text-white text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-rose-600 active:translate-y-[1px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
-              >
-                <Users className="w-3.5 h-3.5" />
-                Pass & Play (Friend)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSoloBotOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[1px] active:shadow-none transition-all cursor-pointer whitespace-nowrap"
-              >
-                <Bot className="w-3.5 h-3.5" />
-                Solo vs Bot
-              </button>
+            <div>
+              <p className="text-xs font-bold text-slate-800">Or play all 11 games offline without signing in</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Play Solo vs Bot or Pass &amp; Play on Chess, Connect Four, Battleship, Checkers &amp; more. Sign in is only needed to play real people online.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setGuestArcadeOpen(true)}
+              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 text-xs sm:text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-amber-400 active:translate-y-[2px] active:shadow-none transition-all cursor-pointer whitespace-nowrap min-h-[44px]"
+            >
+              <Gamepad2 className="w-4 h-4" />
+              Play All 11 Games (Offline / vs Bot)
+            </button>
           </div>
         </div>
       </div>

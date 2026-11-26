@@ -30,6 +30,11 @@ export function MatchChatPanel({
   const listEndRef = useRef<HTMLDivElement | null>(null);
   const initializedRef = useRef(false);
   const prevLengthRef = useRef(0);
+  const expandedRef = useRef(expanded);
+
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
 
   useEffect(() => {
     initializedRef.current = false;
@@ -48,7 +53,7 @@ export function MatchChatPanel({
         } else if (next.length > prevLengthRef.current) {
           const added = next.slice(prevLengthRef.current);
           const fromOpponent = added.filter((m) => m.senderUid !== currentUser.uid).length;
-          if (!expanded && fromOpponent > 0) {
+          if (!expandedRef.current && fromOpponent > 0) {
             setUnreadCount((c) => c + fromOpponent);
           }
           prevLengthRef.current = next.length;
@@ -202,12 +207,12 @@ export function MatchChatPanel({
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Message opponent..."
               aria-label="In-game chat message"
-              className="flex-1 min-w-0 px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="flex-1 min-w-0 min-h-[44px] px-3 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
             <button
               type="submit"
               disabled={sending || !draft.trim()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[1px] active:shadow-none disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-blue-600 text-white text-xs font-bold shadow-[0_2px_0_0_#0F172A] hover:bg-blue-700 active:translate-y-[1px] active:shadow-none disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Send className="w-3.5 h-3.5" />
               Send
