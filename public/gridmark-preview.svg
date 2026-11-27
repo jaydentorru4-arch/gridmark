@@ -1,24 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
-    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#172554"/>
-      <stop offset="1" stop-color="#0F172A"/>
-    </linearGradient>
-    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.5" fill="#CBD5E1" opacity=".65"/>
-    </pattern>
-  </defs>
   <rect width="1200" height="630" fill="#FFFDF7"/>
+  <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#CBD5E1"/></pattern>
   <rect width="1200" height="630" fill="url(#dots)"/>
-  <rect x="54" y="54" width="1092" height="522" rx="42" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="3"/>
-  <rect x="108" y="128" width="374" height="374" rx="76" fill="url(#panel)"/>
-  <rect x="178" y="198" width="234" height="234" rx="30" fill="#111C34" stroke="#334155" stroke-width="8"/>
-  <path d="M256 205V425M334 205V425M185 276H405M185 354H405" stroke="#64748B" stroke-width="10" stroke-linecap="round" opacity=".72"/>
-  <path d="M207 227L245 265M245 227L207 265" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
-  <circle cx="295" cy="315" r="27" fill="none" stroke="#34D399" stroke-width="14"/>
-  <path d="M345 365L383 403M383 365L345 403" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
-  <text x="548" y="286" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="800" letter-spacing="-4">GRIDMARK</text>
-  <rect x="553" y="321" width="82" height="9" rx="4.5" fill="#2563EB"/>
-  <text x="548" y="390" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600" letter-spacing="5">MAKE YOUR MOVE.</text>
-  <text x="548" y="454" fill="#64748B" font-family="Arial, Helvetica, sans-serif" font-size="22">ONLINE MULTIPLAYER TIC-TAC-TOE</text>
+  <rect x="42" y="42" width="1116" height="546" rx="30" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="92" y="138" width="310" height="310" rx="54" fill="#0F172A"/>
+  <path d="M293 214a76 76 0 1 0 14 88h-59" fill="none" stroke="#FFFDF7" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M248 302h59" fill="none" stroke="#60A5FA" stroke-width="25" stroke-linecap="round"/>
+  <rect x="291" y="336" width="30" height="30" rx="7" fill="#34D399"/>
+  <text x="460" y="213" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-3">GRIDMARK</text>
+  <rect x="464" y="240" width="72" height="7" rx="3.5" fill="#2563EB"/>
+  <text x="460" y="302" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="600">A collection of games.</text>
+  <text x="460" y="344" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="600">One place to play.</text>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1.2" text-anchor="middle">
+    <rect x="460" y="400" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="545" y="433" fill="#0F172A">CHESS</text>
+    <rect x="644" y="400" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="729" y="433" fill="#0F172A">CHECKERS</text>
+    <rect x="828" y="400" width="170" height="54" rx="12" fill="#EFF6FF"/><text x="913" y="433" fill="#1D4ED8">WORDLE</text>
+    <rect x="460" y="468" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="545" y="501" fill="#0F172A">HANGMAN</text>
+    <rect x="644" y="468" width="170" height="54" rx="12" fill="#ECFDF5"/><text x="729" y="501" fill="#047857">BATTLESHIPS</text>
+    <rect x="828" y="468" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="913" y="501" fill="#0F172A">TIC-TAC-TOE</text>
+  </g>
 </svg>
