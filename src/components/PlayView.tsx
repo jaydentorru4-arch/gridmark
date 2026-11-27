@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowRight, Bot, LayoutGrid, Plus, Swords, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, LayoutGrid, Plus, Swords, Users } from 'lucide-react';
 import { getCatalogEntry } from '../data/arcadeCatalog';
 import type { BotDifficulty } from '../lib/botAi';
 import { formatRelativeTime, normalizeInviteCode } from '../lib/gameLogic';
@@ -22,6 +22,7 @@ import type { Challenge, GameMark, GameRoom, GameVisibility, PlayerProfile } fro
 import { AvatarBadge } from './AvatarBadge';
 import { BotGameBoard } from './BotGameBoard';
 import { GameBoard } from './GameBoard';
+import { HomeHubView } from './HomeHubView';
 import { LocalGameBoard } from './LocalGameBoard';
 import { ArcadeWorkspace } from './arcade/ArcadeWorkspace';
 import { GameIcon } from './arcade/GameIcon';
@@ -52,6 +53,11 @@ export function PlayView({
   onOpenGame,
   onLeaveRoom,
 }: PlayViewProps) {
+  // Navigation State: 'hub' is the main 11-game dashboard landing screen
+  const [selectedGame, setSelectedGame] = useState<AllGameId | 'hub'>('hub');
+  const [showSwitcher, setShowSwitcher] = useState(false);
+
+  // Tic Tac Toe online room state
   const [visibility, setVisibility] = useState<GameVisibility>('public');
   const [joinCode, setJoinCode] = useState('');
   const [busyCreate, setBusyCreate] = useState(false);
@@ -65,9 +71,7 @@ export function PlayView({
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('tactical');
   const [botPlayerMark, setBotPlayerMark] = useState<GameMark>('X');
 
-  // 11-Game Switcher & Arcade Multiplayer State
-  const [selectedGame, setSelectedGame] = useState<AllGameId>('tictactoe');
-  const [showSwitcher, setShowSwitcher] = useState(false);
+  // Arcade Multiplayer State
   const [activeArcadeRoomId, setActiveArcadeRoomId] = useState<string | null>(null);
   const [openArcadeRooms, setOpenArcadeRooms] = useState<ArcadeRoom[]>([]);
   const [myArcadeRooms, setMyArcadeRooms] = useState<ArcadeRoom[]>([]);
@@ -117,7 +121,7 @@ export function PlayView({
   if (showSwitcher) {
     return (
       <GameSwitcherView
-        selectedGame={selectedGame}
+        selectedGame={selectedGame === 'hub' ? 'tictactoe' : selectedGame}
         onSelectGame={(nextGame) => {
           if (nextGame !== selectedGame) {
             setActiveArcadeRoomId(null);
@@ -133,48 +137,116 @@ export function PlayView({
     );
   }
 
+  // 1. Home Game Hub Dashboard (Default View)
+  if (selectedGame === 'hub') {
+    return (
+      <HomeHubView
+        currentUser={currentUser}
+        openArcadeRooms={openArcadeRooms}
+        onlinePlayers={onlinePlayers}
+        onSelectGame={(gameId) => setSelectedGame(gameId)}
+        onOpenRoom={(roomId) => setActiveArcadeRoomId(roomId)}
+        onStartLocalQuick={() => {
+          setSelectedGame('tictactoe');
+          setLocalMode(true);
+        }}
+        onStartBotQuick={() => {
+          setSelectedGame('tictactoe');
+          setBotMode(true);
+        }}
+      />
+    );
+  }
+
+  // 2. Arcade Workspace for Non-TicTacToe Games
   if (selectedGame !== 'tictactoe') {
     const myActiveArcade = myArcadeRooms.filter(
       (r) => r.status === 'waiting' || r.status === 'playing',
     );
     return (
-      <ArcadeWorkspace
-        gameType={selectedGame}
-        currentUser={currentUser}
-        openRooms={openArcadeRooms}
-        myActiveRooms={myActiveArcade}
-        activeRoomId={activeArcadeRoomId}
-        soundEnabled={soundEnabled}
-        onToggleSound={onToggleSound}
-        onSelectRoom={setActiveArcadeRoomId}
-        onOpenSwitcher={() => setShowSwitcher(true)}
-      />
+      <div className="space-y-4">
+        {/* Back to Hub Navigation */}
+        <div className="flex items-center justify-between gap-3 bg-white border-2 border-slate-900 rounded-xl px-4 py-2.5 shadow-[0_3px_0_0_#0F172A]">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedGame('hub');
+              setActiveArcadeRoomId(null);
+            }}
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-900 hover:text-blue-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            ← Back to Game Library Hub
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSwitcher(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-900 bg-amber-300 text-slate-900 text-xs font-bold shadow-[0_1px_0_0_#0F172A] hover:bg-amber-400 cursor-pointer"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Switch Game
+          </button>
+        </div>
+
+        <ArcadeWorkspace
+          gameType={selectedGame}
+          currentUser={currentUser}
+          openRooms={openArcadeRooms}
+          myActiveRooms={myActiveArcade}
+          activeRoomId={activeArcadeRoomId}
+          soundEnabled={soundEnabled}
+          onToggleSound={onToggleSound}
+          onSelectRoom={setActiveArcadeRoomId}
+          onOpenSwitcher={() => setShowSwitcher(true)}
+        />
+      </div>
     );
   }
 
+  // 3. Tic-Tac-Toe Lobby & Offline Modes
   if (localMode) {
     return (
-      <LocalGameBoard
-        defaultPlayerOneName={currentUser.displayName}
-        defaultPlayerOneAvatar={currentUser.avatarId}
-        soundEnabled={soundEnabled}
-        onToggleSound={onToggleSound}
-        onBack={() => setLocalMode(false)}
-      />
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setLocalMode(false)}
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-900 bg-white border-2 border-slate-900 rounded-xl px-4 py-2 shadow-[0_2px_0_0_#0F172A] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Lobby
+        </button>
+        <LocalGameBoard
+          defaultPlayerOneName={currentUser.displayName}
+          defaultPlayerOneAvatar={currentUser.avatarId}
+          soundEnabled={soundEnabled}
+          onToggleSound={onToggleSound}
+          onBack={() => setLocalMode(false)}
+        />
+      </div>
     );
   }
 
   if (botMode) {
     return (
-      <BotGameBoard
-        playerName={currentUser.displayName}
-        playerAvatar={currentUser.avatarId}
-        initialDifficulty={botDifficulty}
-        initialMark={botPlayerMark}
-        soundEnabled={soundEnabled}
-        onToggleSound={onToggleSound}
-        onBack={() => setBotMode(false)}
-      />
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setBotMode(false)}
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-900 bg-white border-2 border-slate-900 rounded-xl px-4 py-2 shadow-[0_2px_0_0_#0F172A] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Lobby
+        </button>
+        <BotGameBoard
+          playerName={currentUser.displayName}
+          playerAvatar={currentUser.avatarId}
+          initialDifficulty={botDifficulty}
+          initialMark={botPlayerMark}
+          soundEnabled={soundEnabled}
+          onToggleSound={onToggleSound}
+          onBack={() => setBotMode(false)}
+        />
+      </div>
     );
   }
 
@@ -244,21 +316,30 @@ export function PlayView({
 
   return (
     <div className="space-y-8">
-      {/* Game Switcher Access Bar */}
+      {/* Top Bar with Back to Hub */}
       <div className="bg-white border-2 border-slate-900 rounded-2xl px-5 py-4 shadow-[0_4px_0_0_#0F172A] flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setSelectedGame('hub')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-slate-900 bg-white text-xs font-bold text-slate-900 shadow-[0_2px_0_0_#0F172A] hover:bg-amber-50 cursor-pointer whitespace-nowrap"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Hub
+          </button>
           <div className="w-10 h-10 rounded-xl border-2 border-slate-900 bg-amber-300 text-slate-900 flex items-center justify-center shrink-0">
             <GameIcon gameId="tictactoe" className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-display font-bold text-slate-900 truncate">
-              Current Game: {tttCatalog.name}
+              {tttCatalog.name} Lobby
             </p>
             <p className="text-xs text-slate-500">
-              11 multiplayer games ready — Chess, Connect Four, Battleship, Checkers &amp; more
+              Classic 3x3 online duels, private codes, and room tables
             </p>
           </div>
         </div>
+
         <button
           type="button"
           onClick={() => setShowSwitcher(true)}
@@ -284,17 +365,15 @@ export function PlayView({
 
       {/* Primary Two-Column Lobby */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left Focal Anchor: Create or Join Room */}
         <div className="lg:col-span-5 bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold text-slate-900 text-balance">
-              Jump into a live match
+              Jump into Tic Tac Toe
             </h1>
             <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
               Open a public table or generate a 6-character invite code for your friends.
             </p>
 
-            {/* Visibility Segmented Control */}
             <div className="mt-6">
               <span className="block text-xs font-bold text-slate-700 mb-2">
                 Room Visibility
@@ -342,12 +421,12 @@ export function PlayView({
 
           <div className="mt-8 pt-6 border-t-2 border-slate-100">
             <form onSubmit={handleJoinByCode} className="space-y-2.5">
-              <label htmlFor="invite-code-input" className="block text-xs font-bold text-slate-700">
+              <label htmlFor="invite-code-input-ttt" className="block text-xs font-bold text-slate-700">
                 Got an Invite Code?
               </label>
               <div className="flex items-center gap-2.5">
                 <input
-                  id="invite-code-input"
+                  id="invite-code-input-ttt"
                   type="text"
                   maxLength={6}
                   value={joinCode}
@@ -379,12 +458,11 @@ export function PlayView({
           </div>
         </div>
 
-        {/* Right: Open Public Rooms & Resume Active Matches */}
         <div className="lg:col-span-7 bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A] flex flex-col">
           {myActiveGames.length > 0 && (
             <div className="mb-6 pb-6 border-b border-slate-200">
               <h2 className="font-display text-base font-bold text-slate-900">
-                Your Active Rooms
+                Your Active Tic Tac Toe Rooms
               </h2>
               <div className="mt-3 divide-y divide-slate-200 border-2 border-slate-900 rounded-xl overflow-hidden">
                 {myActiveGames.map((game) => {
@@ -432,7 +510,7 @@ export function PlayView({
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-lg font-bold text-slate-900">
-                Open Lobby Rooms
+                Open Public Rooms
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Public tables ready for an opponent
@@ -485,9 +563,8 @@ export function PlayView({
         </div>
       </div>
 
-      {/* Offline Modes: Pass & Play + Solo vs Bot */}
+      {/* Offline Modes */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* In-person Friend Pass & Play */}
         <section className="lg:col-span-5 bg-rose-50 border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between gap-5">
           <div>
             <div className="flex items-center gap-2.5">
@@ -506,11 +583,10 @@ export function PlayView({
             className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 bg-rose-500 text-white text-sm font-bold shadow-[0_3px_0_0_#0F172A] hover:bg-rose-600 active:translate-y-[2px] active:shadow-none cursor-pointer whitespace-nowrap"
           >
             <Users className="w-4 h-4" />
-            Start Pass & Play
+            Start Pass &amp; Play
           </button>
         </section>
 
-        {/* Solo Practice vs Bot */}
         <section className="lg:col-span-7 bg-sky-50 border-2 border-slate-900 rounded-2xl p-6 sm:p-7 shadow-[0_5px_0_0_#0F172A] flex flex-col justify-between gap-5">
           <div>
             <div className="flex items-center gap-2.5">
@@ -571,7 +647,7 @@ export function PlayView({
         </section>
       </div>
 
-      {/* Online Players Directory for Direct Challenges */}
+      {/* Direct Challenges */}
       <section className="bg-white border-2 border-slate-900 rounded-2xl p-6 sm:p-8 shadow-[0_5px_0_0_#0F172A]">
         <div className="flex items-center justify-between gap-4">
           <div>
