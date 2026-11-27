@@ -1,22 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#FFFDF7"/>
-  <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#CBD5E1"/></pattern>
-  <rect width="1200" height="630" fill="url(#dots)"/>
-  <rect x="42" y="42" width="1116" height="546" rx="30" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
-  <rect x="92" y="138" width="310" height="310" rx="54" fill="#0F172A"/>
-  <path d="M293 214a76 76 0 1 0 14 88h-59" fill="none" stroke="#FFFDF7" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M248 302h59" fill="none" stroke="#60A5FA" stroke-width="25" stroke-linecap="round"/>
-  <rect x="291" y="336" width="30" height="30" rx="7" fill="#34D399"/>
-  <text x="460" y="213" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-3">GRIDMARK</text>
-  <rect x="464" y="240" width="72" height="7" rx="3.5" fill="#2563EB"/>
-  <text x="460" y="302" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="600">A collection of games.</text>
-  <text x="460" y="344" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="600">One place to play.</text>
-  <g font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1.2" text-anchor="middle">
-    <rect x="460" y="400" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="545" y="433" fill="#0F172A">CHESS</text>
-    <rect x="644" y="400" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="729" y="433" fill="#0F172A">CHECKERS</text>
-    <rect x="828" y="400" width="170" height="54" rx="12" fill="#EFF6FF"/><text x="913" y="433" fill="#1D4ED8">WORDLE</text>
-    <rect x="460" y="468" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="545" y="501" fill="#0F172A">HANGMAN</text>
-    <rect x="644" y="468" width="170" height="54" rx="12" fill="#ECFDF5"/><text x="729" y="501" fill="#047857">BATTLESHIPS</text>
-    <rect x="828" y="468" width="170" height="54" rx="12" fill="#F1F5F9"/><text x="913" y="501" fill="#0F172A">TIC-TAC-TOE</text>
-  </g>
+<rect width="1200" height="630" fill="#FFFDF7"/>
+<pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#CBD5E1"/></pattern>
+<rect width="1200" height="630" fill="url(#dots)"/>
+<rect x="48" y="48" width="1104" height="534" rx="34" fill="#FFFDF7" stroke="#101B33" stroke-width="5"/>
+<rect x="102" y="127" width="374" height="374" rx="54" fill="#FFD43B" stroke="#101B33" stroke-width="10"/>
+<rect x="180" y="205" width="218" height="218" rx="18" fill="#FFFDF7" stroke="#101B33" stroke-width="12"/>
+<path d="M252 211V417M326 211V417M186 278H392M186 350H392" stroke="#101B33" stroke-width="12" stroke-linecap="round"/>
+<rect x="255" y="281" width="68" height="68" rx="9" fill="#2160F5"/>
+<rect x="329" y="353" width="62" height="62" rx="8" fill="#FFD43B" stroke="#101B33" stroke-width="4"/>
+<text x="548" y="286" fill="#101B33" font-family="Arial,Helvetica,sans-serif" font-size="94" font-weight="800" letter-spacing="-4">Gridmark</text>
+<rect x="552" y="322" width="88" height="10" rx="5" fill="#2160F5"/>
+<text x="548" y="390" fill="#40516C" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="600">A collection of games.</text>
+<text x="548" y="438" fill="#40516C" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="600">One place to play.</text>
+<rect x="548" y="478" width="180" height="42" rx="21" fill="#FFD43B" stroke="#101B33" stroke-width="3"/>
+<text x="638" y="506" text-anchor="middle" fill="#101B33" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700">PLAY YOUR WAY</text>
 </svg>
