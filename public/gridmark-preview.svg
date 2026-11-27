@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#172554"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.5" fill="#CBD5E1" opacity=".65"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#FFFDF7"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <rect x="54" y="54" width="1092" height="522" rx="42" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="3"/>
+  <rect x="108" y="128" width="374" height="374" rx="76" fill="url(#panel)"/>
+  <rect x="178" y="198" width="234" height="234" rx="30" fill="#111C34" stroke="#334155" stroke-width="8"/>
+  <path d="M256 205V425M334 205V425M185 276H405M185 354H405" stroke="#64748B" stroke-width="10" stroke-linecap="round" opacity=".72"/>
+  <path d="M207 227L245 265M245 227L207 265" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="295" cy="315" r="27" fill="none" stroke="#34D399" stroke-width="14"/>
+  <path d="M345 365L383 403M383 365L345 403" stroke="#60A5FA" stroke-width="15" stroke-linecap="round"/>
+  <text x="548" y="286" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="800" letter-spacing="-4">GRIDMARK</text>
+  <rect x="553" y="321" width="82" height="9" rx="4.5" fill="#2563EB"/>
+  <text x="548" y="390" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600" letter-spacing="5">MAKE YOUR MOVE.</text>
+  <text x="548" y="454" fill="#64748B" font-family="Arial, Helvetica, sans-serif" font-size="22">ONLINE MULTIPLAYER TIC-TAC-TOE</text>
+</svg>
